@@ -61,14 +61,14 @@ Navegar a: http://localhost:8080
 
 Una vez inicializada la base de datos:
 
-| Rol     | Email                            | Contraseña | Nombre Completo        |
-| ------- | -------------------------------- | ---------- | ---------------------- |
-| Admin   | admin@iestacio.gva.es            | admin123   | Admin IES Estació      |
-| Usuario | juan.garcia@iestacio.gva.es      | user123    | Juan García López      |
-| Usuario | maria.martinez@iestacio.gva.es   | user123    | María Martínez Sánchez |
-| Usuario | carlos.rodriguez@iestacio.gva.es | user123    | Carlos Rodríguez Pérez |
-| Usuario | ana.fernandez@iestacio.gva.es    | user123    | Ana Fernández Ruiz     |
-| Usuario | pedro.lopez@iestacio.gva.es      | user123    | Pedro López González   |
+| Rol     | Email                     | Contraseña | Nombre Completo   |
+| ------- | ------------------------- | ---------- | ----------------- |
+| Admin   | admin@iestacio.gva.es     | admin123   | Admin IES Estació |
+| Usuario | voro.moran@iestacio.gva.es | user123   | Voro Morán        |
+| Usuario | xavi.smx@iestacio.gva.es  | user123    | Xavi SMX          |
+| Usuario | jairo.smx@iestacio.gva.es | user123    | Jairo SMX         |
+| Usuario | jordi.smx@iestacio.gva.es | user123    | Jordi SMX         |
+| Usuario | miqui.profe@iestacio.gva.es | user123  | Miqui Profesor    |
 
 ---
 

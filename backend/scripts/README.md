@@ -25,14 +25,14 @@ node scripts/init-data.js
 
 ## Usuarios creados
 
-| Rol   | Email                            | Contraseña | Nombre Completo        |
-| ----- | -------------------------------- | ---------- | ---------------------- |
-| Admin | admin@iestacio.gva.es            | admin123   | Admin IES Estació      |
-| User  | juan.garcia@iestacio.gva.es      | user123    | Juan García López      |
-| User  | maria.martinez@iestacio.gva.es   | user123    | María Martínez Sánchez |
-| User  | carlos.rodriguez@iestacio.gva.es | user123    | Carlos Rodríguez Pérez |
-| User  | ana.fernandez@iestacio.gva.es    | user123    | Ana Fernández Ruiz     |
-| User  | pedro.lopez@iestacio.gva.es      | user123    | Pedro López González   |
+| Rol   | Email                       | Contraseña | Nombre Completo   |
+| ----- | --------------------------- | ---------- | ----------------- |
+| Admin | admin@iestacio.gva.es       | admin123   | Admin IES Estació |
+| User  | voro.moran@iestacio.gva.es  | user123    | Voro Morán        |
+| User  | xavi.smx@iestacio.gva.es    | user123    | Xavi SMX          |
+| User  | jairo.smx@iestacio.gva.es   | user123    | Jairo SMX         |
+| User  | jordi.smx@iestacio.gva.es   | user123    | Jordi SMX         |
+| User  | miqui.profe@iestacio.gva.es | user123    | Miqui Profesor    |
 
 ## Notas
 

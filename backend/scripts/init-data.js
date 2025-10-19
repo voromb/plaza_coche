@@ -35,38 +35,38 @@ async function initData() {
         // Crear usuarios normales
         const usuarios = [
             {
-                email: 'juan.garcia@iestacio.gva.es',
+                email: 'voro.moran@iestacio.gva.es',
                 password: 'user123',
-                nombre: 'Juan',
-                apellidos: 'García López',
+                nombre: 'Voro',
+                apellidos: 'Morán',
                 role: 'user',
             },
             {
-                email: 'maria.martinez@iestacio.gva.es',
+                email: 'xavi.smx@iestacio.gva.es',
                 password: 'user123',
-                nombre: 'María',
-                apellidos: 'Martínez Sánchez',
+                nombre: 'Xavi',
+                apellidos: 'SMX',
                 role: 'user',
             },
             {
-                email: 'carlos.rodriguez@iestacio.gva.es',
+                email: 'jairo.smx@iestacio.gva.es',
                 password: 'user123',
-                nombre: 'Carlos',
-                apellidos: 'Rodríguez Pérez',
+                nombre: 'Jairo',
+                apellidos: 'SMX',
                 role: 'user',
             },
             {
-                email: 'ana.fernandez@iestacio.gva.es',
+                email: 'jordi.smx@iestacio.gva.es',
                 password: 'user123',
-                nombre: 'Ana',
-                apellidos: 'Fernández Ruiz',
+                nombre: 'Jordi',
+                apellidos: 'SMX',
                 role: 'user',
             },
             {
-                email: 'pedro.lopez@iestacio.gva.es',
+                email: 'miqui.profe@iestacio.gva.es',
                 password: 'user123',
-                nombre: 'Pedro',
-                apellidos: 'López González',
+                nombre: 'Miqui',
+                apellidos: 'Profesor',
                 role: 'user',
             },
         ];
@@ -105,11 +105,11 @@ async function initData() {
         console.log('\n📝 Credenciales:');
         console.log('   👤 Admin: admin@iestacio.gva.es / admin123');
         console.log('\n   👥 Usuarios (todos con password: user123):');
-        console.log('   • juan.garcia@iestacio.gva.es');
-        console.log('   • maria.martinez@iestacio.gva.es');
-        console.log('   • carlos.rodriguez@iestacio.gva.es');
-        console.log('   • ana.fernandez@iestacio.gva.es');
-        console.log('   • pedro.lopez@iestacio.gva.es');
+        console.log('   • voro.moran@iestacio.gva.es');
+        console.log('   • xavi.smx@iestacio.gva.es');
+        console.log('   • jairo.smx@iestacio.gva.es');
+        console.log('   • jordi.smx@iestacio.gva.es');
+        console.log('   • miqui.profe@iestacio.gva.es');
 
         process.exit(0);
     } catch (error) {

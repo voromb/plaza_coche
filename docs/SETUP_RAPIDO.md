@@ -49,11 +49,11 @@ El script automáticamente:
 
 **Usuarios (todos con password: user123):**
 
--   `juan.garcia@iestacio.gva.es`
--   `maria.martinez@iestacio.gva.es`
--   `carlos.rodriguez@iestacio.gva.es`
--   `ana.fernandez@iestacio.gva.es`
--   `pedro.lopez@iestacio.gva.es`
+-   `voro.moran@iestacio.gva.es`
+-   `xavi.smx@iestacio.gva.es`
+-   `jairo.smx@iestacio.gva.es`
+-   `jordi.smx@iestacio.gva.es`
+-   `miqui.profe@iestacio.gva.es`
 
 ## 🔧 Comandos Útiles
 

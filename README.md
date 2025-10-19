@@ -60,11 +60,11 @@ npm start
 
 **Usuarios (todos con password: user123):**
 
--   juan.garcia@iestacio.gva.es (Juan García López)
--   maria.martinez@iestacio.gva.es (María Martínez Sánchez)
--   carlos.rodriguez@iestacio.gva.es (Carlos Rodríguez Pérez)
--   ana.fernandez@iestacio.gva.es (Ana Fernández Ruiz)
--   pedro.lopez@iestacio.gva.es (Pedro López González)
+-   voro.moran@iestacio.gva.es (Voro Morán)
+-   xavi.smx@iestacio.gva.es (Xavi SMX)
+-   jairo.smx@iestacio.gva.es (Jairo SMX)
+-   jordi.smx@iestacio.gva.es (Jordi SMX)
+-   miqui.profe@iestacio.gva.es (Miqui Profesor)
 
 ## 📁 Estructura del Proyecto
 
