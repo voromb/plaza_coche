@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Plaza Coche - Login</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+  <div class="container">
+    <div class="auth-box">
+      <h1>Plaza Coche</h1>
+      <p class="subtitle">Sistema de Alquiler de Plazas</p>
+
+      <!-- Formulario de Login -->
+      <div id="loginForm" class="form-section active">
+        <h2>Iniciar Sesión</h2>
+        <form id="login">
+          <div class="form-group">
+            <label for="loginEmail">Email</label>
+            <input type="email" id="loginEmail" required>
+          </div>
+          <div class="form-group">
+            <label for="loginPassword">Contraseña</label>
+            <input type="password" id="loginPassword" required>
+          </div>
+          <button type="submit" class="btn btn-primary">Entrar</button>
+        </form>
+        <p class="switch-form">
+          ¿No tienes cuenta? <a href="#" id="showRegister">Regístrate aquí</a>
+        </p>
+      </div>
+
+      <!-- Formulario de Registro -->
+      <div id="registerForm" class="form-section">
+        <h2>Registrarse</h2>
+        <form id="register">
+          <div class="form-group">
+            <label for="registerNombre">Nombre</label>
+            <input type="text" id="registerNombre" required>
+          </div>
+          <div class="form-group">
+            <label for="registerApellidos">Apellidos</label>
+            <input type="text" id="registerApellidos" required>
+          </div>
+          <div class="form-group">
+            <label for="registerEmail">Email</label>
+            <input type="email" id="registerEmail" required>
+          </div>
+          <div class="form-group">
+            <label for="registerPassword">Contraseña</label>
+            <input type="password" id="registerPassword" required>
+          </div>
+          <button type="submit" class="btn btn-primary">Registrarse</button>
+        </form>
+        <p class="switch-form">
+          ¿Ya tienes cuenta? <a href="#" id="showLogin">Inicia sesión aquí</a>
+        </p>
+      </div>
+
+      <div id="message" class="message"></div>
+    </div>
+  </div>
+
+  <!-- Scripts - Singletons primero -->
+  <script src="js/ApiService.js"></script>
+  <script src="js/AuthService.js"></script>
+  <script>
+    // Lógica del formulario de login/registro
+    const loginForm = document.getElementById('loginForm');
+    const registerForm = document.getElementById('registerForm');
+    const messageDiv = document.getElementById('message');
+
+    // Cambiar entre login y registro
+    document.getElementById('showRegister').addEventListener('click', (e) => {
+      e.preventDefault();
+      loginForm.classList.remove('active');
+      registerForm.classList.add('active');
+      messageDiv.textContent = '';
+    });
+
+    document.getElementById('showLogin').addEventListener('click', (e) => {
+      e.preventDefault();
+      registerForm.classList.remove('active');
+      loginForm.classList.add('active');
+      messageDiv.textContent = '';
+    });
+
+    // Manejar login
+    document.getElementById('login').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const email = document.getElementById('loginEmail').value;
+      const password = document.getElementById('loginPassword').value;
+
+      try {
+        const result = await AuthService.getInstance().login(email, password);
+
+        // Redirigir según el rol
+        if (result.user.role === 'admin') {
+          window.location.href = 'admin.html';
+        } else {
+          window.location.href = 'user.html';
+        }
+      } catch (error) {
+        showMessage(error.message || 'Error al iniciar sesión', 'error');
+      }
+    });
+
+    // Manejar registro
+    document.getElementById('register').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const nombre = document.getElementById('registerNombre').value;
+      const apellidos = document.getElementById('registerApellidos').value;
+      const email = document.getElementById('registerEmail').value;
+      const password = document.getElementById('registerPassword').value;
+
+      try {
+        await AuthService.getInstance().register(email, password, nombre, apellidos);
+        showMessage('Registro exitoso. Por favor, inicia sesión', 'success');
+
+        // Cambiar a formulario de login
+        registerForm.classList.remove('active');
+        loginForm.classList.add('active');
+        document.getElementById('register').reset();
+      } catch (error) {
+        showMessage(error.message || 'Error al registrarse', 'error');
+      }
+    });
+
+    function showMessage(text, type) {
+      messageDiv.textContent = text;
+      messageDiv.className = 'message ' + type;
+      messageDiv.style.display = 'block';
+    }
+
+    // Verificar si ya está logueado
+    if (AuthService.getInstance().isAuthenticated()) {
+      const user = AuthService.getInstance().getCurrentUser();
+      if (user.role === 'admin') {
+        window.location.href = 'admin.html';
+      } else {
+        window.location.href = 'user.html';
+      }
+    }
+  </script>
+</body>
+
+</html>

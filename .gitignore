@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Environment variables (permitidos para proyecto educativo)
+# .env (se sube para facilitar el estudio)
+.env.local
+.env.production
+
+# Backups de base de datos (permitir para proyecto educativo)
+# db_backups/ (se pueden subir para trabajar en diferentes PCs)
+
+# Docker
+.docker/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*
+

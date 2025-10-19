@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+    # MongoDB
+    mongodb:
+        image: mongo:latest
+        container_name: plaza_coche_mongodb
+        restart: always
+        ports:
+            - '${MONGO_PORT:-27017}:27017'
+        environment:
+            - MONGO_INITDB_ROOT_USERNAME=${MONGO_USERNAME}
+            - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
+        volumes:
+            - mongo_data:/data/db
+        networks:
+            - plaza_coche_network
+
+    # Backend (Express)
+    backend:
+        build: ./backend
+        container_name: plaza_coche_backend
+        restart: always
+        ports:
+            - '${BACKEND_PORT:-3000}:3000'
+        environment:
+            - MONGO_URI=${MONGO_URI}
+            - JWT_SECRET=${JWT_SECRET}
+            - PORT=3000
+        depends_on:
+            - mongodb
+        networks:
+            - plaza_coche_network
+        volumes:
+            - ./backend:/app
+            - /app/node_modules
+
+    # Frontend (Nginx)
+    frontend:
+        image: nginx:alpine
+        container_name: plaza_coche_frontend
+        restart: always
+        ports:
+            - '${FRONTEND_PORT:-8080}:80'
+        volumes:
+            - ./frontend:/usr/share/nginx/html:ro
+        networks:
+            - plaza_coche_network
+        depends_on:
+            - backend
+
+volumes:
+    mongo_data:
+        driver: local
+
+networks:
+    plaza_coche_network:
+        driver: bridge
