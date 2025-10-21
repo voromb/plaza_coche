@@ -687,89 +687,233 @@ Cada usuario puede introducir su horario de trabajo disponible. El sistema permi
 
 ## Asignación Automática de Cargador
 
-### Descripción
+### Descripción General
 
-El sistema asigna automáticamente horas de cargador cada lunes a las 00:00 de forma equitativa entre todos los usuarios, priorizando a quienes usaron menos horas la semana anterior.
+El sistema implementa una asignación **equitativa y automática** de horas de cargador cada lunes a las 00:00 (medianoche). El objetivo es que todos los usuarios tengan la oportunidad de usar el cargador de forma justa, priorizando a quienes usaron menos la semana anterior.
 
-### Algoritmo
+### ¿Cómo Funciona el Cron Job?
 
-1. Cada lunes a medianoche se ejecuta el cron job
-2. Busca cuántas horas usó cada usuario la semana anterior
-3. Ordena usuarios por horas de menor a mayor
-4. Asigna horas basadas en el horario disponible de cada usuario
-5. Máximo 2 horas por día laboral (lunes-viernes)
-6. Las horas se distribuyen equitativamente
-
-### Archivo de Configuración
-
+#### Archivo Principal
 `backend/jobs/chargerAssignment.js`
 
+#### Configuración del Schedule
 ```javascript
-// Programar job cada lunes a las 00:00
+// Ejecutar cada lunes a las 00:00 (medianoche)
 cron.schedule('0 0 0 * * 1', () => {
+    console.log('Ejecutando asignación automática de cargador (cada lunes)');
     autoAssignCharger();
 });
 ```
 
-### Flujo
+**Desglose del formato cron:** `0 0 0 * * 1`
+- `0` = segundo 0
+- `0` = minuto 0  
+- `0` = hora 0 (medianoche UTC)
+- `*` = cualquier día del mes (flexible)
+- `*` = cualquier mes (flexible)
+- `1` = día 1 de la semana (lunes)
 
-1. El backend inicia con el cron job
-2. Cada lunes obtiene uso de semana anterior
-3. Consulta horarios de cada usuario
-4. Calcula horas disponibles
-5. Crea registros de `WeeklyUsage` para esta semana
-6. Usuario ve asignación en primera pestaña
+**Resultado:** La función `autoAssignCharger()` se ejecuta automáticamente cada lunes a las 00:00.
 
-### Endpoints Relacionados
+### Algoritmo de Asignación (Paso a Paso)
 
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| POST | `/api/admin/auto-assign-charger` | Ejecutar asignación manual |
-| GET | `/api/user/weekly-usage` | Obtener asignación de esta semana |
+#### Paso 1: Obtener Uso de la Semana Anterior
+```javascript
+const hace7Dias = new Date(hoy.getTime() - 7 * 24 * 60 * 60 * 1000);
+const semanaAnterior = getWeekNumber(hace7Dias);
 
----
+const usosSemanaPasada = {};
+for (const usuario of usuarios) {
+    const uso = await WeeklyUsage.findOne({
+        userId: usuario._id,
+        semana: semanaAnterior,
+    });
+    usosSemanaPasada[usuario._id] = uso ? uso.horasUtilizadas : 0;
+}
+```
+**Qué hace:** 
+- Calcula la fecha de hace 7 días
+- Busca el número de semana anterior
+- Para cada usuario, obtiene cuántas horas usó esa semana
+- Si no tiene registro, asume 0 horas
 
-## Sistema de Pestañas
-
-### Descripción
-
-El panel de usuario ahora organiza la información en 3 pestañas para mejor experiencia:
-
-### Estructura
-
-**Pestaña 1: Asignación Esta Semana**
-- Muestra horas totales asignadas
-- Distribuido por días (Lunes-Viernes)
-- Rango horario específico (ej: 8:00-10:00)
-- Se calcula automáticamente cada lunes
-
-**Pestaña 2: Mi Horario**
-- Horario semanal registrado por el usuario
-- Tabla con días y horas disponibles
-- Botón para modificar horario (solo si aún no tiene uno)
-- Una vez guardado, solo admin puede cambiar
-
-**Pestaña 3: Uso del Cargador**
-- Historial de uso semanal
-- Barra de progreso visual
-- Detalleado por día
-- Máximo 40 horas por semana (8h × 5 días)
-
-### Implementación
-
-En `frontend/user.html`:
-```html
-<div class="tabs">
-    <button class="tab-btn active" data-tab="asignacion">Asignación Esta Semana</button>
-    <button class="tab-btn" data-tab="horario">Mi Horario</button>
-    <button class="tab-btn" data-tab="uso">Uso del Cargador</button>
-</div>
+**Ejemplo:**
+```
+Usuario A: 10 horas
+Usuario B: 2 horas
+Usuario C: 15 horas
+Usuario D: 5 horas
+Usuario E: 8 horas
 ```
 
-En `frontend/js/user.js`:
-- Función `initTabs()` maneja cambio de pestañas
-- Cargar datos específicos según pestaña activa
-- Estilos en CSS para activación de pestañas
+#### Paso 2: Ordenar Usuarios (Menor a Mayor)
+```javascript
+const usuariosOrdenados = usuarios.sort((a, b) => {
+    return usosSemanaPasada[a._id] - usosSemanaPasada[b._id];
+});
+```
+**Qué hace:** Ordena los usuarios de menor a mayor uso
+
+**Resultado del ejemplo anterior:**
+```
+1º Usuario B: 2 horas  ← Primera prioridad
+2º Usuario D: 5 horas
+3º Usuario E: 8 horas
+4º Usuario A: 10 horas
+5º Usuario C: 15 horas ← Última prioridad
+```
+
+#### Paso 3: Obtener Horario de Cada Usuario
+```javascript
+const schedule = await Schedule.findOne({
+    userId: usuario._id,
+    mes: mes,
+    año: año,
+});
+
+if (!schedule) {
+    continue; // No asignar si no tiene horario
+}
+```
+**Qué hace:** 
+- Busca el horario mensual del usuario
+- Si no tiene horario registrado, lo salta
+- Esto asegura que solo usuarios activos reciban asignación
+
+#### Paso 4: Calcular Horas Disponibles
+```javascript
+const horasPorDia = {};
+dias.forEach(dia => {
+    horasPorDia[dia] = 0;
+});
+
+schedule.horarios.forEach(item => {
+    if (item.horas && item.horas.length > 0) {
+        // Limitar a máximo 2 horas por día
+        horasPorDia[item.dia] = Math.min(item.horas.length, 2);
+    }
+});
+```
+**Qué hace:**
+- Recorre el horario de cada usuario
+- Cuenta cuántas horas tiene disponibles por día
+- **Limita a máximo 2 horas por día** (protección contra sobreasignación)
+
+**Ejemplo:**
+```
+Usuario tiene: Lunes [8,9,10,11,12,13,15,16] (8 horas)
+Se asigna:    Máximo 2 horas (8:00-9:00 ó 9:00-10:00)
+Resultado:    horasPorDia['lunes'] = 2
+```
+
+#### Paso 5: Crear Registro de Uso Semanal
+```javascript
+const detalleHoras = [];
+let totalHoras = 0;
+
+dias.forEach(dia => {
+    const horas = horasPorDia[dia];
+    detalleHoras.push({
+        dia: dia,
+        horas: horas,
+    });
+    totalHoras += horas;
+});
+
+const weeklyUsage = new WeeklyUsage({
+    userId: usuario._id,
+    semana: semanaActual,
+    horasUtilizadas: totalHoras,
+    detalleHoras: detalleHoras,
+});
+
+await weeklyUsage.save();
+```
+**Qué hace:**
+- Crea array con detalleHoras (horas por día)
+- Calcula totalHoras (suma de todos los días)
+- Guarda en BD para que usuario lo vea
+
+**Ejemplo de resultado:**
+```json
+{
+  "userId": "123abc",
+  "semana": "2025-43",
+  "horasUtilizadas": 8,
+  "detalleHoras": [
+    { "dia": "lunes", "horas": 2 },
+    { "dia": "martes", "horas": 2 },
+    { "dia": "miercoles", "horas": 2 },
+    { "dia": "jueves", "horas": 1 },
+    { "dia": "viernes", "horas": 1 }
+  ]
+}
+```
+
+### Ejemplo Completo de Ejecución
+
+**Contexto:**
+- Lunes 27 de octubre 2025, 00:00 (medianoche)
+- 5 usuarios en el sistema
+
+**Datos de semana anterior (20-26 octubre):**
+```
+Juan:   10 horas usadas
+María:  2 horas usadas
+Pedro:  15 horas usadas
+Laura:  5 horas usadas
+Carlos: 8 horas usadas
+```
+
+**Orden de prioridad (menor a mayor):**
+```
+1º María (2h)   → Asignar primero
+2º Laura (5h)
+3º Carlos (8h)
+4º Juan (10h)
+5º Pedro (15h)  → Asignar último
+```
+
+**Horarios de cada usuario (aproximado):**
+```
+María:   8-10 (2h disponibles)
+Laura:   8-12 (4h disponibles)
+Carlos:  9-12 (3h disponibles)
+Juan:    8-22 (14h disponibles)
+Pedro:   8-22 (14h disponibles)
+```
+
+**Asignación de esta semana (27 oct - 2 nov):**
+```
+María:   2 horas (8:00-10:00 lunes-martes)
+Laura:   4 horas (8:00-12:00 distribuido)
+Carlos:  2 horas (máximo 2 por día)
+Juan:    2 horas (máximo 2 por día)
+Pedro:   2 horas (máximo 2 por día)
+```
+
+### Ventajas del Algoritmo
+
+✅ **Equitativo:** Prioriza a quienes menos usaron
+✅ **Automático:** Sin intervención manual del admin
+✅ **Seguro:** Límite de 2h/día evita monopolios
+✅ **Flexible:** Se adapta al horario de cada usuario
+✅ **Justo:** Todos tienen oportunidad cada semana
+
+### Cómo ve el Usuario la Asignación
+
+El usuario accede a la **primera pestaña** "Asignación Esta Semana" y ve:
+
+```
+Te tocan 8 horas esta semana
+
+Distribuido por días:
+Lunes:    2h (8:00 - 10:00)
+Martes:   2h (8:00 - 10:00)
+Miércoles: 2h (8:00 - 10:00)
+Jueves:   1h (8:00 - 9:00)
+Viernes:  1h (8:00 - 9:00)
+```
 
 ---
 
