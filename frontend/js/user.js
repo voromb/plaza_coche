@@ -34,6 +34,17 @@ document.addEventListener('DOMContentLoaded', () => {
     loadChargerAssignment();
     loadScheduleDisplay();
     loadWeeklyUsage();
+    
+    // Si es un usuario nuevo, abrir modal de horario automáticamente
+    const isNewUser = localStorage.getItem('newUserSchedule');
+    if (isNewUser) {
+        localStorage.removeItem('newUserSchedule'); // Limpiar flag
+        // Esperar un poco a que cargue todo, luego abrir modal
+        setTimeout(() => {
+            renderScheduleGrid();
+            scheduleModal.classList.add('active');
+        }, 500);
+    }
 });
 
 // Sistema de tabs

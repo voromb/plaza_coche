@@ -119,13 +119,17 @@
       const password = document.getElementById('registerPassword').value;
 
       try {
+        // Registrar usuario
         await AuthService.getInstance().register(email, password, nombre, apellidos);
-        showMessage('Registro exitoso. Por favor, inicia sesión', 'success');
-
-        // Cambiar a formulario de login
-        registerForm.classList.remove('active');
-        loginForm.classList.add('active');
-        document.getElementById('register').reset();
+        
+        // Loguear automáticamente después del registro
+        await AuthService.getInstance().login(email, password);
+        
+        // Guardar flag para abrir modal de horario en user.html
+        localStorage.setItem('newUserSchedule', 'true');
+        
+        // Redirigir a panel de usuario
+        window.location.href = 'user.html';
       } catch (error) {
         showMessage(error.message || 'Error al registrarse', 'error');
       }
