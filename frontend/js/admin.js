@@ -17,6 +17,7 @@ const messageDiv = document.getElementById('message');
 const plazaModal = document.getElementById('plazaModal');
 const plazaForm = document.getElementById('plazaForm');
 const closeModal = document.querySelector('.close');
+const addPlazaBtn = document.getElementById('addPlazaBtn');
 
 // Inicializar
 document.addEventListener('DOMContentLoaded', () => {
@@ -224,6 +225,13 @@ async function loadUsers() {
 }
 
 // Abrir modal para crear plaza
+addPlazaBtn.addEventListener('click', () => {
+    currentEditingPlazaId = null;
+    document.getElementById('modalTitle').textContent = 'Nueva Plaza';
+    plazaForm.reset();
+    plazaModal.classList.add('active');
+});
+
 // Cerrar modal
 closeModal.addEventListener('click', () => {
     plazaModal.classList.remove('active');
@@ -234,6 +242,25 @@ window.addEventListener('click', e => {
     if (e.target === plazaModal) {
         plazaModal.classList.remove('active');
         plazaForm.reset();
+    }
+});
+
+// Crear plaza
+plazaForm.addEventListener('submit', async e => {
+    e.preventDefault();
+
+    const numero = document.getElementById('numero').value;
+    const ubicacion = document.getElementById('ubicacion').value;
+    const descripcion = document.getElementById('descripcion').value;
+
+    try {
+        await apiService.createParkingSpot(numero, ubicacion, descripcion);
+        showMessage('Plaza creada correctamente', 'success');
+        plazaModal.classList.remove('active');
+        plazaForm.reset();
+        loadParkingSpots();
+    } catch (error) {
+        showMessage('Error al crear plaza: ' + error.message, 'error');
     }
 });
 
