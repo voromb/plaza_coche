@@ -356,6 +356,38 @@ async function loadUsageList() {
     }
 }
 
+// Cargar semanas disponibles cuando se selecciona un usuario
+document.getElementById('filterUser').addEventListener('change', async (e) => {
+    const userId = e.target.value;
+    const filterWeek = document.getElementById('filterWeek');
+
+    if (!userId) {
+        filterWeek.innerHTML = '<option value="">Selecciona una semana...</option>';
+        return;
+    }
+
+    try {
+        // Obtener historial del usuario
+        const usage = await apiService.getUserUsageHistory(userId);
+        
+        // Llenar dropdown con las semanas disponibles
+        filterWeek.innerHTML = '<option value="">Selecciona una semana...</option>';
+        
+        if (usage && usage.length > 0) {
+            usage.forEach(week => {
+                const option = document.createElement('option');
+                option.value = week.semana;
+                option.textContent = `Semana ${week.semana} (${week.horasUtilizadas}h)`;
+                filterWeek.appendChild(option);
+            });
+        } else {
+            filterWeek.innerHTML = '<option value="">Sin datos disponibles</option>';
+        }
+    } catch (error) {
+        showMessage('Error al cargar semanas: ' + error.message, 'error');
+    }
+});
+
 // Buscar uso semanal de un usuario específico
 document.getElementById('filterBtn').addEventListener('click', async () => {
     const userId = document.getElementById('filterUser').value;
@@ -368,7 +400,7 @@ document.getElementById('filterBtn').addEventListener('click', async () => {
     }
 
     if (!semana) {
-        showMessage('Ingresa una semana (Ej: 2025-43)', 'error');
+        showMessage('Selecciona una semana', 'error');
         return;
     }
 
