@@ -327,6 +327,10 @@ async function loadUsageList() {
             filterUser.appendChild(option);
         });
 
+        // Registrar el event listener para cambio de usuario
+        filterUser.removeEventListener('change', handleUserChange);
+        filterUser.addEventListener('change', handleUserChange);
+
         container.innerHTML = `
             <table>
                 <thead>
@@ -356,8 +360,8 @@ async function loadUsageList() {
     }
 }
 
-// Cargar semanas disponibles cuando se selecciona un usuario
-document.getElementById('filterUser').addEventListener('change', async (e) => {
+// Manejar cambio de usuario para cargar semanas
+async function handleUserChange(e) {
     const userId = e.target.value;
     const filterWeek = document.getElementById('filterWeek');
 
@@ -386,7 +390,10 @@ document.getElementById('filterUser').addEventListener('change', async (e) => {
     } catch (error) {
         showMessage('Error al cargar semanas: ' + error.message, 'error');
     }
-});
+}
+
+// Cargar semanas disponibles cuando se selecciona un usuario
+// (Este event listener se registra en loadUsageList)
 
 // Buscar uso semanal de un usuario específico
 document.getElementById('filterBtn').addEventListener('click', async () => {
