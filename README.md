@@ -15,22 +15,15 @@ Sistema web para gestionar el alquiler de plazas de estacionamiento del institut
 
 **Nota:** El proyecto incluye el archivo `.env` configurado para desarrollo educativo.
 
-#### Opción 1: Script Automático (Windows)
-
-```powershell
-.\scripts_ps\start.ps1
-```
-
-#### Opción 2: Manual
-
 ```bash
-# 1. Iniciar servicios
-docker-compose up --build -d
+# 1. Levantar servicios
+docker-compose up -d
 
-# 2. ⚠️ IMPORTANTE: Inicializar datos (OBLIGATORIO)
-docker exec plaza_coche_backend node scripts/init-data.js
+# 2. Restaurar datos desde backup
+.\scripts_ps\restore-db.ps1  # Windows
+./scripts_ps/restore-db.sh   # Linux/Mac
 
-# 3. Abrir http://localhost:8080
+# 3. Acceder a http://localhost:8080
 ```
 
 ### Sin Docker
@@ -49,7 +42,7 @@ npm start
 ## 🌐 Acceso
 
 -   **Frontend**: http://localhost:8080
--   **Backend API**: http://localhost:3000
+-   **Backend API**: http://localhost:3010
 -   **MongoDB**: localhost:27017
 
 ## 👤 Usuarios por Defecto
@@ -71,41 +64,38 @@ npm start
 ```
 plaza_coche/
 ├── backend/          # API Express
-│   └── scripts/      # Scripts de inicialización BD
 ├── frontend/         # Interfaz web
-├── scripts_ps/       # Scripts PowerShell y Bash
-├── docs/             # Documentación completa
+├── scripts_ps/       # Scripts de backup/restore
 ├── db_backups/       # Backups de la base de datos (JSON)
 ├── .env              # Variables de entorno (incluido en Git - proyecto educativo)
-└── docker-compose.yml
+├── docker-compose.yml
+├── DOCUMENTACION.md  # Documentación completa
+└── README.md
 ```
 
 ## 🔄 Scripts Disponibles
 
 ### Windows (PowerShell)
 
--   `.\scripts_ps\start.ps1` - Inicia todo el sistema automáticamente
--   `.\scripts_ps\init-db.ps1` - Inicializa datos de prueba
--   `.\scripts_ps\backup-db.ps1` - 📤 Exporta la base de datos a JSON
--   `.\scripts_ps\restore-db.ps1` - 📥 Restaura desde backup
--   `.\scripts_ps\setup-env.ps1` - Configura variables de entorno
+-   `.\scripts_ps\backup-db.ps1` - Exporta la base de datos a JSON
+-   `.\scripts_ps\restore-db.ps1` - Restaura desde backup
 
 ### Linux/Mac
 
--   `./scripts_ps/start.sh` - Inicia todo el sistema automáticamente
--   `./scripts_ps/init-db.sh` - Inicializa datos de prueba
+-   `./scripts_ps/backup-db.sh` - Exporta la base de datos a JSON
+-   `./scripts_ps/restore-db.sh` - Restaura desde backup
 
-**💡 Tip:** Para trabajar en diferentes PCs, usa `backup-db.ps1` antes de hacer push y `restore-db.ps1` después de hacer pull.
+**Tip:** Para trabajar en diferentes PCs, usa `backup-db.ps1` antes de hacer push y `restore-db.ps1` después de hacer pull.
 
 ## 📚 Documentación
 
--   `docs/QUICKSTART.md` - Inicio rápido
--   `docs/INSTALL.md` - Instalación detallada
--   `docs/ARQUITECTURA.md` - Arquitectura técnica
--   `docs/ESTRUCTURA.md` - Estructura del código
--   `docs/SEGURIDAD.md` - Guía de seguridad
--   `docs/DB_BACKUP_GUIDE.md` - Sistema de backups
--   `docs/PROYECTO_COMPLETO.md` - Resumen completo
+Ver `DOCUMENTACION.md` para la guía completa con:
+- Instalación detallada
+- Arquitectura técnica
+- Estructura del código
+- Seguridad
+- Sistema de backups
+- Solución de problemas
 
 ## 🔐 Endpoints API
 
