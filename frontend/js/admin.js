@@ -334,7 +334,6 @@ async function loadUsageList() {
                         <th>Usuario</th>
                         <th>Email</th>
                         <th>Total Horas</th>
-                        <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -345,9 +344,6 @@ async function loadUsageList() {
                             <td>${user.nombre} ${user.apellidos}</td>
                             <td>${user.email}</td>
                             <td>${user.horasUtilizadas || 0}h</td>
-                            <td>
-                                <button class="btn btn-sm btn-primary" onclick="openUsageHistoryModal('${user._id}', '${user.nombre} ${user.apellidos}')">Ver Histórico</button>
-                            </td>
                         </tr>
                     `
                         )
@@ -400,56 +396,5 @@ document.getElementById('filterBtn').addEventListener('click', async () => {
         container.innerHTML = html;
     } catch (error) {
         showMessage('Error al buscar datos: ' + error.message, 'error');
-    }
-});
-
-// Abrir modal para ver histórico de un usuario
-async function openUsageHistoryModal(userId, userName) {
-    try {
-        const usage = await apiService.getUserUsageHistory(userId);
-        const weekSelect = document.getElementById('usageWeekSelect');
-        const modalTitle = document.getElementById('usageModalTitle');
-        
-        modalTitle.textContent = `Histórico - ${userName}`;
-        
-        weekSelect.innerHTML = '';
-        if (usage && usage.length > 0) {
-            usage.forEach(item => {
-                const option = document.createElement('option');
-                option.value = item.semana;
-                option.textContent = `Semana ${item.semana} - ${item.horasUtilizadas}h`;
-                weekSelect.appendChild(option);
-            });
-        } else {
-            weekSelect.innerHTML = '<option>Sin histórico</option>';
-        }
-
-        // Guardar el userId actual para usar después
-        window.currentUsageUserId = userId;
-        document.getElementById('editUsageModal').classList.add('active');
-    } catch (error) {
-        showMessage('Error al cargar histórico: ' + error.message, 'error');
-    }
-}
-
-// Guardar horas editadas
-document.getElementById('saveUsageBtn').addEventListener('click', async () => {
-    const userId = window.currentUsageUserId;
-    const semana = document.getElementById('usageWeekSelect').value;
-    const dia = document.getElementById('usageDaySelect').value;
-    const horas = parseFloat(document.getElementById('usageHoursInput').value);
-
-    if (!semana || !dia || isNaN(horas)) {
-        showMessage('Completa todos los campos', 'error');
-        return;
-    }
-
-    try {
-        await apiService.updateUserWeeklyUsage(userId, semana, dia, horas);
-        showMessage('Horas actualizadas correctamente', 'success');
-        document.getElementById('editUsageModal').classList.remove('active');
-        loadUsageList();
-    } catch (error) {
-        showMessage('Error al actualizar horas: ' + error.message, 'error');
     }
 });
