@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-// Patrón Singleton para la conexión a MongoDB
+// Patrón Singleton para asegurar una única conexión a MongoDB
 class Database {
     constructor() {
         if (Database.instance) {
@@ -12,6 +12,7 @@ class Database {
         this.connect();
     }
 
+    // Conectar a la base de datos MongoDB
     async connect() {
         try {
             const mongoURI = process.env.MONGO_URI || 'mongodb://mongodb:27017/plaza_coche';
@@ -28,12 +29,13 @@ class Database {
         }
     }
 
+    // Obtener la conexión establecida
     getConnection() {
         return this.connection;
     }
 }
 
-// Crear instancia única
+// Instancia única de la conexión
 const database = new Database();
 
 module.exports = database;

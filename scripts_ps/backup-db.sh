@@ -25,9 +25,17 @@ if [ ! -d "$backupDir" ]; then
     echo "[✓] Carpeta '$backupDir' creada"
 fi
 
+# Crear carpeta con la fecha del día
+dateFolder=$(date +"%Y-%m-%d")
+backupDayDir="${backupDir}/${dateFolder}"
+if [ ! -d "$backupDayDir" ]; then
+    mkdir -p "$backupDayDir"
+    echo "[✓] Carpeta '$backupDayDir' creada"
+fi
+
 # Timestamp para el backup
 timestamp=$(date +"%Y%m%d_%H%M%S")
-backupPath="${backupDir}/backup_${timestamp}"
+backupPath="${backupDayDir}/backup_${timestamp}"
 
 echo "Exportando base de datos..."
 echo ""
@@ -45,15 +53,25 @@ echo "   Exportando reservas..."
 docker exec plaza_coche_mongodb mongoexport --db=plaza_coche --collection=reservations --out=/tmp/reservations.json --jsonArray 2>/dev/null
 docker cp plaza_coche_mongodb:/tmp/reservations.json "${backupPath}_reservations.json" 2>/dev/null
 
+echo "   Exportando horarios..."
+docker exec plaza_coche_mongodb mongoexport --db=plaza_coche --collection=schedules --out=/tmp/schedules.json --jsonArray 2>/dev/null
+docker cp plaza_coche_mongodb:/tmp/schedules.json "${backupPath}_schedules.json" 2>/dev/null
+
+echo "   Exportando uso del cargador..."
+docker exec plaza_coche_mongodb mongoexport --db=plaza_coche --collection=weeklyusages --out=/tmp/weeklyusages.json --jsonArray 2>/dev/null
+docker cp plaza_coche_mongodb:/tmp/weeklyusages.json "${backupPath}_weeklyusages.json" 2>/dev/null
+
 echo ""
 echo "========================================"
 echo "  Backup Completado"
 echo "========================================"
 echo ""
-echo "Archivos guardados en:"
-echo "  ${backupPath}_users.json"
-echo "  ${backupPath}_parkingspots.json"
-echo "  ${backupPath}_reservations.json"
+echo "Guardado en: db_backups/${dateFolder}/"
+echo "  backup_${timestamp}_users.json"
+echo "  backup_${timestamp}_parkingspots.json"
+echo "  backup_${timestamp}_reservations.json"
+echo "  backup_${timestamp}_schedules.json"
+echo "  backup_${timestamp}_weeklyusages.json"
 echo ""
 echo "Estos archivos se pueden subir a Git"
 echo ""

@@ -24,9 +24,17 @@ if (-not (Test-Path $backupDir)) {
     Write-Host "[✓] Carpeta '$backupDir' creada" -ForegroundColor Green
 }
 
+# Crear carpeta con la fecha del día
+$dateFolder = Get-Date -Format "yyyy-MM-dd"
+$backupDayDir = "$backupDir/$dateFolder"
+if (-not (Test-Path $backupDayDir)) {
+    New-Item -ItemType Directory -Path $backupDayDir | Out-Null
+    Write-Host "[✓] Carpeta '$backupDayDir' creada" -ForegroundColor Green
+}
+
 # Timestamp para el backup
 $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
-$backupPath = "$backupDir/backup_$timestamp"
+$backupPath = "$backupDayDir/backup_$timestamp"
 
 Write-Host "Exportando base de datos..." -ForegroundColor Yellow
 Write-Host ""
@@ -44,15 +52,25 @@ Write-Host "  → Exportando reservas..." -ForegroundColor White
 docker exec plaza_coche_mongodb mongoexport --db=plaza_coche --collection=reservations --out=/tmp/reservations.json --jsonArray 2>$null
 docker cp plaza_coche_mongodb:/tmp/reservations.json "$backupPath`_reservations.json" 2>$null
 
+Write-Host "  → Exportando horarios..." -ForegroundColor White
+docker exec plaza_coche_mongodb mongoexport --db=plaza_coche --collection=schedules --out=/tmp/schedules.json --jsonArray 2>$null
+docker cp plaza_coche_mongodb:/tmp/schedules.json "$backupPath`_schedules.json" 2>$null
+
+Write-Host "  → Exportando uso del cargador..." -ForegroundColor White
+docker exec plaza_coche_mongodb mongoexport --db=plaza_coche --collection=weeklyusages --out=/tmp/weeklyusages.json --jsonArray 2>$null
+docker cp plaza_coche_mongodb:/tmp/weeklyusages.json "$backupPath`_weeklyusages.json" 2>$null
+
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Green
 Write-Host "  Backup Completado" -ForegroundColor Green
 Write-Host "========================================" -ForegroundColor Green
 Write-Host ""
-Write-Host "Archivos guardados en:" -ForegroundColor White
-Write-Host "  $backupPath`_users.json" -ForegroundColor Cyan
-Write-Host "  $backupPath`_parkingspots.json" -ForegroundColor Cyan
-Write-Host "  $backupPath`_reservations.json" -ForegroundColor Cyan
+Write-Host "Guardado en: db_backups/$dateFolder/" -ForegroundColor White
+Write-Host "  backup_$timestamp`_users.json" -ForegroundColor Cyan
+Write-Host "  backup_$timestamp`_parkingspots.json" -ForegroundColor Cyan
+Write-Host "  backup_$timestamp`_reservations.json" -ForegroundColor Cyan
+Write-Host "  backup_$timestamp`_schedules.json" -ForegroundColor Cyan
+Write-Host "  backup_$timestamp`_weeklyusages.json" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "Estos archivos se pueden subir a Git" -ForegroundColor Yellow
 Write-Host ""

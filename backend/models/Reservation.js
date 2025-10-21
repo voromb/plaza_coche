@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 
+// Esquema de reserva de plaza
 const reservationSchema = new mongoose.Schema({
     userId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -19,6 +20,7 @@ const reservationSchema = new mongoose.Schema({
         type: Date,
         required: true,
     },
+    // Estado de la reserva: activa, completada o cancelada
     estado: {
         type: String,
         enum: ['activa', 'completada', 'cancelada'],

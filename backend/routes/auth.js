@@ -9,13 +9,13 @@ router.post('/register', async (req, res) => {
     try {
         const { email, password, nombre, apellidos, role } = req.body;
 
-        // Verificar si el usuario ya existe
+        // Comprobar si el email ya está registrado
         const existingUser = await User.findOne({ email });
         if (existingUser) {
             return res.status(400).json({ message: 'El email ya está registrado' });
         }
 
-        // Crear nuevo usuario
+        // Guardar nuevo usuario en BD
         const user = new User({
             email,
             password,
@@ -47,19 +47,19 @@ router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        // Buscar usuario
+        // Buscar usuario por email
         const user = await User.findOne({ email });
         if (!user) {
             return res.status(401).json({ message: 'Credenciales incorrectas' });
         }
 
-        // Verificar contraseña
+        // Verificar que la contraseña sea correcta
         const isPasswordValid = await user.comparePassword(password);
         if (!isPasswordValid) {
             return res.status(401).json({ message: 'Credenciales incorrectas' });
         }
 
-        // Generar token JWT
+        // Crear token JWT válido por 24 horas
         const token = jwt.sign(
             {
                 id: user._id,

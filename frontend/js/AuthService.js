@@ -11,7 +11,7 @@ class AuthService {
         this.currentUser = null;
         this.token = null;
 
-        // Cargar datos de sesión si existen
+        // Cargar sesión guardada si existe
         this.loadSession();
 
         AuthService.instance = this;
@@ -24,7 +24,7 @@ class AuthService {
         return AuthService.instance;
     }
 
-    // Cargar sesión desde localStorage
+    // Recuperar token y usuario de localStorage
     loadSession() {
         const token = localStorage.getItem('token');
         const user = localStorage.getItem('user');
@@ -35,7 +35,7 @@ class AuthService {
         }
     }
 
-    // Guardar sesión en localStorage
+    // Guardar token y usuario en localStorage
     saveSession(token, user) {
         this.token = token;
         this.currentUser = user;
@@ -43,7 +43,7 @@ class AuthService {
         localStorage.setItem('user', JSON.stringify(user));
     }
 
-    // Limpiar sesión
+    // Limpiar sesión (logout)
     clearSession() {
         this.token = null;
         this.currentUser = null;
@@ -51,7 +51,7 @@ class AuthService {
         localStorage.removeItem('user');
     }
 
-    // Login
+    // Hacer login con email y contraseña
     async login(email, password) {
         try {
             const response = await this.apiService.login(email, password);
@@ -62,7 +62,7 @@ class AuthService {
         }
     }
 
-    // Register
+    // Registrar nuevo usuario
     async register(email, password, nombre, apellidos) {
         try {
             const response = await this.apiService.register(email, password, nombre, apellidos);
@@ -72,28 +72,28 @@ class AuthService {
         }
     }
 
-    // Logout
+    // Cerrar sesión y volver a inicio
     logout() {
         this.clearSession();
         window.location.href = 'index.html';
     }
 
-    // Verificar si está autenticado
+    // Verificar si hay sesión activa
     isAuthenticated() {
         return this.token !== null && this.currentUser !== null;
     }
 
-    // Obtener usuario actual
+    // Obtener datos del usuario autenticado
     getCurrentUser() {
         return this.currentUser;
     }
 
-    // Verificar si es admin
+    // Verificar si el usuario es admin
     isAdmin() {
         return this.currentUser && this.currentUser.role === 'admin';
     }
 
-    // Proteger rutas
+    // Redirigir si no está autenticado
     requireAuth() {
         if (!this.isAuthenticated()) {
             window.location.href = 'index.html';
@@ -102,6 +102,7 @@ class AuthService {
         return true;
     }
 
+    // Redirigir si no es admin
     requireAdmin() {
         if (!this.requireAuth()) return false;
 

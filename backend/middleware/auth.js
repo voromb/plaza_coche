@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'cliente_DAW';
 
-// Middleware para verificar token JWT
+// Verificar que el token JWT sea válido
 const verifyToken = (req, res, next) => {
     const token = req.headers['authorization']?.split(' ')[1];
 
@@ -19,7 +19,7 @@ const verifyToken = (req, res, next) => {
     }
 };
 
-// Middleware para verificar rol de admin
+// Verificar que el usuario autenticado sea admin
 const verifyAdmin = (req, res, next) => {
     if (req.user.role !== 'admin') {
         return res

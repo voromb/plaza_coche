@@ -77,15 +77,51 @@ plaza_coche/
 
 ### Windows (PowerShell)
 
--   `.\scripts_ps\backup-db.ps1` - Exporta la base de datos a JSON
+-   `.\scripts_ps\backup-db.ps1` - Exporta la base de datos a JSON (organizado por fecha)
 -   `.\scripts_ps\restore-db.ps1` - Restaura desde backup
 
 ### Linux/Mac
 
--   `./scripts_ps/backup-db.sh` - Exporta la base de datos a JSON
+-   `./scripts_ps/backup-db.sh` - Exporta la base de datos a JSON (organizado por fecha)
 -   `./scripts_ps/restore-db.sh` - Restaura desde backup
 
-**Tip:** Para trabajar en diferentes PCs, usa `backup-db.ps1` antes de hacer push y `restore-db.ps1` después de hacer pull.
+**Estructura de backups:**
+```
+db_backups/
+├── 2025-10-21/
+│   ├── backup_20251021_120000_users.json
+│   ├── backup_20251021_120000_parkingspots.json
+│   └── backup_20251021_120000_reservations.json
+└── 2025-10-22/
+    └── backup_20251022_100000_users.json
+```
+
+**Uso de restore:**
+
+```powershell
+# Windows - El script te pide la carpeta, luego coge el backup más nuevo
+.\scripts_ps\restore-db.ps1
+
+# Windows - O especifica la carpeta directamente (sin diálogo)
+.\scripts_ps\restore-db.ps1 2025-10-21
+```
+
+```bash
+# Linux/Mac - El script te pide la carpeta, luego coge el backup más nuevo
+./scripts_ps/restore-db.sh
+
+# Linux/Mac - O especifica la carpeta directamente (sin diálogo)
+./scripts_ps/restore-db.sh 2025-10-21
+```
+
+**Flujo:**
+1. Ejecuta el script sin parámetros
+2. El script muestra las carpetas disponibles (por fecha)
+3. Tú seleccionas el número de la carpeta
+4. El script automáticamente coge el backup más nuevo de esa carpeta
+5. El script restaura y te pide confirmación
+
+**Tip:** Los backups se organizan en carpetas por fecha. Para trabajar en diferentes PCs, usa `backup-db.ps1` antes de hacer push y `restore-db.ps1` después de hacer pull.
 
 ## 📚 Documentación
 

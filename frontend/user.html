@@ -19,36 +19,61 @@
     </header>
 
     <div class="container">
-      <div class="section">
-        <h2>Plazas Disponibles</h2>
-        <div id="parkingSpots" class="grid"></div>
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="asignacion">Asignación Esta Semana</button>
+        <button class="tab-btn" data-tab="horario">Mi Horario</button>
+        <button class="tab-btn" data-tab="uso">Uso del Cargador</button>
+      </div>
+      
+      <!-- Tab: Asignación Esta Semana -->
+      <div id="asignacion" class="tab-content active">
+        <div class="section">
+          <h2>Cargador Esta Semana</h2>
+          <div id="chargerAssignment" class="info-card">
+            <p>Cargando información...</p>
+          </div>
+          </div>
       </div>
 
-      <div class="section">
-        <h2>Mis Reservas</h2>
-        <div id="myReservations" class="reservations-list"></div>
+      <!-- Tab: Mi Horario -->
+      <div id="horario" class="tab-content">
+        <div class="section">
+          <h2>Mi Horario</h2>
+          <button id="editScheduleBtn" class="btn btn-primary">Introducir Horario</button>
+          <div id="scheduleDisplay"></div>
+          </div>
+          </div>
+          
+          <!-- Tab: Uso del Cargador -->
+          <div id="uso" class="tab-content">
+            <div class="section">
+              <h2>Uso del Cargador</h2>
+              <div id="usageDisplay" class="usage-card">
+                <div class="usage-header">
+                  <h3>Esta Semana</h3>
+                  <span id="weeklyHours" class="usage-value">0 horas</span>
+                </div>
+                <div class="usage-bar">
+                  <div id="usageBar" class="usage-progress"></div>
+                </div>
+                <div id="usageDetails" class="usage-details"></div>
+              </div>
+            </div>
       </div>
 
       <div id="message" class="message"></div>
     </div>
   </div>
 
-  <!-- Modal para reservar -->
-  <div id="reserveModal" class="modal">
+  <!-- Modal para introducir horario -->
+  <div id="scheduleModal" class="modal">
     <div class="modal-content">
       <span class="close">&times;</span>
-      <h2>Reservar Plaza <span id="modalPlazaNumero"></span></h2>
-      <form id="reserveForm">
-        <div class="form-group">
-          <label for="fechaInicio">Fecha Inicio</label>
-          <input type="date" id="fechaInicio" required>
-        </div>
-        <div class="form-group">
-          <label for="fechaFin">Fecha Fin</label>
-          <input type="date" id="fechaFin" required>
-        </div>
-        <button type="submit" class="btn btn-primary">Confirmar Reserva</button>
-      </form>
+      <h2>Mi Horario Semanal</h2>
+      <p>Clickea las horas que trabajas (8-14 y 15-22)</p>
+      <div id="scheduleGrid"></div>
+      <button id="saveScheduleBtn" class="btn btn-primary">Guardar Horario</button>
     </div>
   </div>
 

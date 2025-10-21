@@ -17,6 +17,10 @@ Sistema web para gestionar el alquiler de plazas de estacionamiento del IES Esta
 9. [Usuarios de Prueba](#usuarios-de-prueba)
 10. [Seguridad](#seguridad)
 11. [Scripts Disponibles](#scripts-disponibles)
+12. [Funcionalidades](#funcionalidades)
+13. [Horario Semanal del Usuario](#horario-semanal-del-usuario)
+14. [Asignación Automática de Cargador](#asignación-automática-de-cargador)
+15. [Sistema de Pestañas](#sistema-de-pestañas)
 
 ---
 
@@ -78,6 +82,7 @@ docker-compose up -d
 -   JWT (jsonwebtoken 9.0)
 -   Bcrypt 2.4
 -   CORS
+-   node-cron 3.0 (para cron jobs automáticos)
 -   Patrón Singleton (Database)
 
 ### Base de Datos
@@ -237,23 +242,32 @@ plaza_coche/
 
 ### User (Requiere JWT)
 
-| Método | Endpoint                           | Descripción               |
-| ------ | ---------------------------------- | ------------------------- |
-| GET    | `/api/user/parking-spots`          | Listar plazas disponibles |
-| POST   | `/api/user/reserve`                | Crear reserva             |
-| GET    | `/api/user/my-reservations`        | Mis reservas              |
-| DELETE | `/api/user/cancel-reservation/:id` | Cancelar reserva          |
+| Método | Endpoint                  | Descripción               |
+|--------|---------------------------|--------------------------|
+| GET    | `/api/user/parking-spots` | Listar plazas disponibles |
+| POST   | `/api/user/schedule`      | Guardar horario semanal   |
+| GET    | `/api/user/schedule`      | Obtener horario actual    |
+| GET    | `/api/user/weekly-usage`  | Obtener uso semanal actual |
+| POST   | `/api/user/weekly-usage/add` | Agregar horas al uso semanal |
 
 ### Admin (Requiere JWT + rol admin)
 
-| Método | Endpoint                      | Descripción        |
-| ------ | ----------------------------- | ------------------ |
-| GET    | `/api/admin/parking-spots`    | Todas las plazas   |
-| POST   | `/api/admin/parking-spot`     | Crear plaza        |
-| PUT    | `/api/admin/parking-spot/:id` | Actualizar plaza   |
-| DELETE | `/api/admin/parking-spot/:id` | Eliminar plaza     |
-| GET    | `/api/admin/all-reservations` | Todas las reservas |
-| GET    | `/api/admin/users`            | Todos los usuarios |
+| Método | Endpoint                           | Descripción              |
+|--------|-----------------------------------|--------------------------|
+| GET    | `/api/admin/parking-spots`        | Todas las plazas         |
+| POST   | `/api/admin/parking-spot`         | Crear plaza              |
+| PUT    | `/api/admin/parking-spot/:id`     | Actualizar plaza         |
+| DELETE | `/api/admin/parking-spot/:id`     | Eliminar plaza           |
+| PUT    | `/api/admin/parking-spot/:id/toggle` | Activar/Desactivar plaza |
+| POST   | `/api/admin/assign-plaza/:plazaId/user/:userId` | Asignar plaza a usuario |
+| POST   | `/api/admin/unassign-plaza/:plazaId` | Liberar plaza |
+| GET    | `/api/admin/user/:userId/horas-utilizadas` | Obtener horas de un usuario |
+| PUT    | `/api/admin/user/:userId/horas-utilizadas` | Actualizar horas de un usuario |
+| GET    | `/api/admin/usuarios-horas` | Obtener todos usuarios con sus horas |
+| GET    | `/api/admin/user/:userId/weekly-usage` | Obtener uso semanal de un usuario |
+| GET    | `/api/admin/user/:userId/usage-history` | Obtener histórico de uso de un usuario |
+| PUT    | `/api/admin/user/:userId/weekly-usage` | Actualizar horas de un usuario |
+| GET    | `/api/admin/users`                | Todos los usuarios       |
 
 ---
 
@@ -269,6 +283,7 @@ plaza_coche/
   nombre: String,
   apellidos: String,
   role: 'user' | 'admin',
+  horasUtilizadas: Number,
   createdAt: Date
 }
 ```
@@ -282,6 +297,7 @@ plaza_coche/
   ubicacion: String,
   descripcion: String,
   disponible: Boolean,
+  activa: Boolean,
   createdAt: Date
 }
 ```
@@ -297,6 +313,43 @@ plaza_coche/
   fechaFin: Date,
   estado: 'activa' | 'completada' | 'cancelada',
   createdAt: Date
+}
+```
+
+### Schedule
+
+```javascript
+{
+  _id: ObjectId,
+  userId: ObjectId → User,
+  horarios: [
+    {
+      dia: String,
+      horas: [Number]
+    }
+  ],
+  mes: Number,
+  año: Number,
+  createdAt: Date
+}
+```
+
+### WeeklyUsage
+
+```javascript
+{
+  _id: ObjectId,
+  userId: ObjectId → User,
+  semana: String,          // Formato: YYYY-WW (ej: 2025-43)
+  horasUtilizadas: Number, // Total de horas esta semana
+  detalleHoras: [
+    {
+      dia: String,         // lunes, martes, miercoles, jueves, viernes
+      horas: Number
+    }
+  ],
+  createdAt: Date,
+  updatedAt: Date
 }
 ```
 
@@ -532,6 +585,191 @@ docker-compose down
 
 El backend se reinicia automáticamente con cambios (volumen montado).
 Para el frontend, solo recarga el navegador.
+
+---
+
+## Funcionalidades
+
+### Admin
+- Ver todas las plazas (3 plazas fijas: A-01, B-01, C-01)
+- Crear nuevas plazas
+- Activar/Desactivar plazas con toggle ON/OFF
+- Asignar plazas a usuarios registrados
+- Liberar plazas asignadas
+- Ver todos los usuarios
+
+### Usuario
+- Ver su horario semanal
+- Introducir y guardar horario semanal (lunes-viernes, 8-22h)
+- Ver plazas disponibles (solo las activas)
+
+---
+
+## Asignación de Plazas por Admin
+
+### Descripción
+
+El admin puede asignar plazas de estacionamiento a usuarios registrados. Una plaza asignada se marca como no disponible para otros usuarios.
+
+### Flujo
+
+1. Admin accede a tab "Plazas"
+2. Ve tabla con todas las plazas y sus estados
+3. Clickea botón "Asignar" en la plaza deseada
+4. Se abre modal con dropdown de usuarios
+5. Admin selecciona usuario y confirma
+6. Plaza se marca como no disponible (asignada)
+7. Si necesita liberar, clickea "Liberar" y plaza vuelve a disponible
+
+### Endpoints
+
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| POST | `/api/admin/assign-plaza/:plazaId/user/:userId` | Asignar plaza a usuario |
+| POST | `/api/admin/unassign-plaza/:plazaId` | Liberar plaza |
+
+### Interfaz
+
+- Botón "Asignar" en cada plaza disponible
+- Botón "Liberar" solo en plazas no disponibles (asignadas)
+- Modal con lista de usuarios para seleccionar
+
+---
+
+## Horario Semanal del Usuario
+
+### Descripción
+
+Cada usuario puede introducir su horario de trabajo disponible. El sistema permite marcar las horas de lunes a viernes (8-22h) haciendo click en una tabla interactiva. El horario se guarda por mes y año.
+
+### Estructura de Datos
+
+```javascript
+{
+  _id: ObjectId,
+  userId: ObjectId,
+  horarios: [
+    {
+      dia: 'lunes',
+      horas: [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]
+    },
+    ...
+  ],
+  mes: 10,
+  año: 2025,
+  createdAt: Date
+}
+```
+
+### Flujo de Usuario
+
+1. Usuario clickea botón "Introducir Horario"
+2. Se abre modal con tabla interactiva (lunes-viernes × horas 8-22)
+3. Usuario clickea las horas que trabaja (se ponen verdes)
+4. Clickea "Guardar Horario"
+5. Sistema guarda en BD
+6. Se muestra tabla resumen del horario guardado
+
+### Endpoints
+
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| POST | `/api/user/schedule` | Guardar horario semanal |
+| GET | `/api/user/schedule` | Obtener horario actual (mes/año) |
+
+### Interfaz
+
+- Tabla de horario clickeable: 5 columnas (días) × 14 filas (horas)
+- Estilos: Celdas blancas por defecto, verdes cuando seleccionadas
+- Responsive en móviles
+
+---
+
+## Asignación Automática de Cargador
+
+### Descripción
+
+El sistema asigna automáticamente horas de cargador cada lunes a las 00:00 de forma equitativa entre todos los usuarios, priorizando a quienes usaron menos horas la semana anterior.
+
+### Algoritmo
+
+1. Cada lunes a medianoche se ejecuta el cron job
+2. Busca cuántas horas usó cada usuario la semana anterior
+3. Ordena usuarios por horas de menor a mayor
+4. Asigna horas basadas en el horario disponible de cada usuario
+5. Máximo 2 horas por día laboral (lunes-viernes)
+6. Las horas se distribuyen equitativamente
+
+### Archivo de Configuración
+
+`backend/jobs/chargerAssignment.js`
+
+```javascript
+// Programar job cada lunes a las 00:00
+cron.schedule('0 0 0 * * 1', () => {
+    autoAssignCharger();
+});
+```
+
+### Flujo
+
+1. El backend inicia con el cron job
+2. Cada lunes obtiene uso de semana anterior
+3. Consulta horarios de cada usuario
+4. Calcula horas disponibles
+5. Crea registros de `WeeklyUsage` para esta semana
+6. Usuario ve asignación en primera pestaña
+
+### Endpoints Relacionados
+
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| POST | `/api/admin/auto-assign-charger` | Ejecutar asignación manual |
+| GET | `/api/user/weekly-usage` | Obtener asignación de esta semana |
+
+---
+
+## Sistema de Pestañas
+
+### Descripción
+
+El panel de usuario ahora organiza la información en 3 pestañas para mejor experiencia:
+
+### Estructura
+
+**Pestaña 1: Asignación Esta Semana**
+- Muestra horas totales asignadas
+- Distribuido por días (Lunes-Viernes)
+- Rango horario específico (ej: 8:00-10:00)
+- Se calcula automáticamente cada lunes
+
+**Pestaña 2: Mi Horario**
+- Horario semanal registrado por el usuario
+- Tabla con días y horas disponibles
+- Botón para modificar horario (solo si aún no tiene uno)
+- Una vez guardado, solo admin puede cambiar
+
+**Pestaña 3: Uso del Cargador**
+- Historial de uso semanal
+- Barra de progreso visual
+- Detalleado por día
+- Máximo 40 horas por semana (8h × 5 días)
+
+### Implementación
+
+En `frontend/user.html`:
+```html
+<div class="tabs">
+    <button class="tab-btn active" data-tab="asignacion">Asignación Esta Semana</button>
+    <button class="tab-btn" data-tab="horario">Mi Horario</button>
+    <button class="tab-btn" data-tab="uso">Uso del Cargador</button>
+</div>
+```
+
+En `frontend/js/user.js`:
+- Función `initTabs()` maneja cambio de pestañas
+- Cargar datos específicos según pestaña activa
+- Estilos en CSS para activación de pestañas
 
 ---
 

@@ -7,8 +7,9 @@ if (!authService.requireAdmin()) {
     throw new Error('Acceso denegado');
 }
 
-// Variables globales
+// Variables para guardar ids cuando se editan o asignan plazas
 let currentEditingPlazaId = null;
+let currentAssignPlazaId = null;
 
 // Elementos del DOM
 const userName = document.getElementById('userName');
@@ -18,8 +19,11 @@ const plazaModal = document.getElementById('plazaModal');
 const plazaForm = document.getElementById('plazaForm');
 const closeModal = document.querySelector('.close');
 const addPlazaBtn = document.getElementById('addPlazaBtn');
+const assignPlazaModal = document.getElementById('assignPlazaModal');
+const usuarioSelect = document.getElementById('usuarioSelect');
+const confirmAssignBtn = document.getElementById('confirmAssignBtn');
 
-// Inicializar
+// Cargar datos al abrir la página
 document.addEventListener('DOMContentLoaded', () => {
     const user = authService.getCurrentUser();
     userName.textContent = `${user.nombre} ${user.apellidos} (Admin)`;
@@ -28,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadParkingSpots();
 });
 
-// Logout
+// Cerrar sesión
 logoutBtn.addEventListener('click', () => {
     authService.logout();
 });
@@ -42,21 +46,21 @@ function initTabs() {
         btn.addEventListener('click', () => {
             const tabId = btn.getAttribute('data-tab');
 
-            // Remover clase active de todos
+            // Desactivar todos los tabs
             tabBtns.forEach(b => b.classList.remove('active'));
             tabContents.forEach(c => c.classList.remove('active'));
 
-            // Activar seleccionado
+            // Activar el tab seleccionado
             btn.classList.add('active');
             document.getElementById(tabId).classList.add('active');
 
-            // Cargar contenido según tab
+            // Cargar los datos según el tab
             if (tabId === 'plazas') {
                 loadParkingSpots();
-            } else if (tabId === 'reservas') {
-                loadAllReservations();
             } else if (tabId === 'usuarios') {
                 loadUsers();
+            } else if (tabId === 'uso') {
+                loadUsageList();
             }
         });
     });
@@ -81,7 +85,7 @@ async function loadParkingSpots() {
                         <th>Ubicación</th>
                         <th>Descripción</th>
                         <th>Disponible</th>
-                        <th>Activa</th>
+                        <th>Estado</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
@@ -99,14 +103,24 @@ async function loadParkingSpots() {
                                 </span>
                             </td>
                             <td>
-                                <span class="status ${spot.activa ? 'disponible' : 'ocupada'}">
-                                    ${spot.activa ? 'Sí' : 'No'}
-                                </span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" ${
+                                        spot.activa ? 'checked' : ''
+                                    } onchange="togglePlaza('${spot._id}')">
+                                    <span class="toggle-slider"></span>
+                                </label>
                             </td>
                             <td>
-                                <button class="btn btn-primary btn-small" onclick="togglePlaza('${spot._id}')">
-                                    ${spot.activa ? 'Desactivar' : 'Activar'}
+                                <button class="btn btn-success btn-small" onclick="openAssignPlazaModal('${
+                                    spot._id
+                                }')">
+                                    Asignar
                                 </button>
+                                ${
+                                    spot.disponible === false
+                                        ? `<button class="btn btn-warning btn-small" onclick="unassignPlaza('${spot._id}')">Liberar</button>`
+                                        : ''
+                                }
                             </td>
                         </tr>
                     `
@@ -120,62 +134,7 @@ async function loadParkingSpots() {
     }
 }
 
-// Cargar todas las reservas
-async function loadAllReservations() {
-    try {
-        const reservations = await apiService.getAllReservations();
-        const container = document.getElementById('reservationsList');
-
-        if (reservations.length === 0) {
-            container.innerHTML = '<p>No hay reservas registradas</p>';
-            return;
-        }
-
-        container.innerHTML = `
-            <table>
-                <thead>
-                    <tr>
-                        <th>Usuario</th>
-                        <th>Plaza</th>
-                        <th>Ubicación</th>
-                        <th>Fecha Inicio</th>
-                        <th>Fecha Fin</th>
-                        <th>Estado</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${reservations
-                        .map(res => {
-                            const fechaInicio = new Date(res.fechaInicio).toLocaleDateString();
-                            const fechaFin = new Date(res.fechaFin).toLocaleDateString();
-
-                            return `
-                            <tr>
-                                <td>${res.userId.nombre} ${res.userId.apellidos}</td>
-                                <td><strong>${res.parkingSpotId.numero}</strong></td>
-                                <td>${res.parkingSpotId.ubicacion}</td>
-                                <td>${fechaInicio}</td>
-                                <td>${fechaFin}</td>
-                                <td>
-                                    <span class="status ${
-                                        res.estado === 'activa' ? 'activa' : 'ocupada'
-                                    }">
-                                        ${res.estado}
-                                    </span>
-                                </td>
-                            </tr>
-                        `;
-                        })
-                        .join('')}
-                </tbody>
-            </table>
-        `;
-    } catch (error) {
-        showMessage('Error al cargar reservas: ' + error.message, 'error');
-    }
-}
-
-// Cargar usuarios
+// Cargar todos los usuarios
 async function loadUsers() {
     try {
         const users = await apiService.getAllUsers();
@@ -232,7 +191,7 @@ addPlazaBtn.addEventListener('click', () => {
     plazaModal.classList.add('active');
 });
 
-// Cerrar modal
+// Cerrar modales
 closeModal.addEventListener('click', () => {
     plazaModal.classList.remove('active');
     plazaForm.reset();
@@ -243,9 +202,18 @@ window.addEventListener('click', e => {
         plazaModal.classList.remove('active');
         plazaForm.reset();
     }
+    if (e.target === assignPlazaModal) {
+        assignPlazaModal.classList.remove('active');
+    }
 });
 
-// Crear plaza
+document.querySelectorAll('.close').forEach(btn => {
+    btn.addEventListener('click', function () {
+        this.closest('.modal').classList.remove('active');
+    });
+});
+
+// Crear nueva plaza
 plazaForm.addEventListener('submit', async e => {
     e.preventDefault();
 
@@ -264,7 +232,7 @@ plazaForm.addEventListener('submit', async e => {
     }
 });
 
-// Activar/Desactivar plaza
+// Activar o desactivar una plaza
 async function togglePlaza(id) {
     try {
         const response = await apiService.toggleParkingSpot(id);
@@ -275,7 +243,7 @@ async function togglePlaza(id) {
     }
 }
 
-// Mostrar mensajes
+// Mostrar mensajes en pantalla
 function showMessage(text, type) {
     messageDiv.textContent = text;
     messageDiv.className = 'message ' + type;
@@ -285,3 +253,150 @@ function showMessage(text, type) {
         messageDiv.style.display = 'none';
     }, 5000);
 }
+
+// Abrir modal para asignar plaza a usuario
+async function openAssignPlazaModal(plazaId) {
+    currentAssignPlazaId = plazaId;
+
+    try {
+        const users = await apiService.getAllUsers();
+        // Mostrar solo los usuarios normales (no admins)
+        usuarioSelect.innerHTML = users
+            .filter(u => u.role === 'user')
+            .map(u => `<option value="${u._id}">${u.nombre} ${u.apellidos} (${u.email})</option>`)
+            .join('');
+
+        assignPlazaModal.classList.add('active');
+    } catch (error) {
+        showMessage('Error al cargar usuarios: ' + error.message, 'error');
+    }
+}
+
+// Confirmar asignación de plaza
+confirmAssignBtn.addEventListener('click', async () => {
+    const userId = usuarioSelect.value;
+
+    if (!userId) {
+        showMessage('Selecciona un usuario', 'error');
+        return;
+    }
+
+    try {
+        await apiService.assignPlaza(currentAssignPlazaId, userId);
+        showMessage('Plaza asignada correctamente', 'success');
+        assignPlazaModal.classList.remove('active');
+        loadParkingSpots();
+    } catch (error) {
+        showMessage('Error al asignar plaza: ' + error.message, 'error');
+    }
+});
+
+// Liberar una plaza asignada
+async function unassignPlaza(plazaId) {
+    if (!confirm('¿Liberar esta plaza?')) {
+        return;
+    }
+
+    try {
+        await apiService.unassignPlaza(plazaId);
+        showMessage('Plaza liberada', 'success');
+        loadParkingSpots();
+    } catch (error) {
+        showMessage('Error al liberar plaza: ' + error.message, 'error');
+    }
+}
+
+// Cargar y mostrar uso del cargador de todos los usuarios
+async function loadUsageList() {
+    try {
+        const usuarios = await apiService.getUsuariosHoras();
+        const container = document.getElementById('usageList');
+
+        if (!usuarios || usuarios.length === 0) {
+            container.innerHTML = '<p>No hay usuarios registrados</p>';
+            return;
+        }
+
+        container.innerHTML = `
+            <table>
+                <thead>
+                    <tr>
+                        <th>Usuario</th>
+                        <th>Email</th>
+                        <th>Total Horas</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${usuarios
+                        .map(
+                            user => `
+                        <tr>
+                            <td>${user.nombre} ${user.apellidos}</td>
+                            <td>${user.email}</td>
+                            <td>${user.horasUtilizadas || 0}h</td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" onclick="openUsageHistoryModal('${user._id}', '${user.nombre} ${user.apellidos}')">Ver Histórico</button>
+                            </td>
+                        </tr>
+                    `
+                        )
+                        .join('')}
+                </tbody>
+            </table>
+        `;
+    } catch (error) {
+        showMessage('Error al cargar uso: ' + error.message, 'error');
+    }
+}
+
+// Abrir modal para ver histórico de un usuario
+async function openUsageHistoryModal(userId, userName) {
+    try {
+        const usage = await apiService.getUserUsageHistory(userId);
+        const weekSelect = document.getElementById('usageWeekSelect');
+        const modalTitle = document.getElementById('usageModalTitle');
+        
+        modalTitle.textContent = `Histórico - ${userName}`;
+        
+        weekSelect.innerHTML = '';
+        if (usage && usage.length > 0) {
+            usage.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item.semana;
+                option.textContent = `Semana ${item.semana} - ${item.horasUtilizadas}h`;
+                weekSelect.appendChild(option);
+            });
+        } else {
+            weekSelect.innerHTML = '<option>Sin histórico</option>';
+        }
+
+        // Guardar el userId actual para usar después
+        window.currentUsageUserId = userId;
+        document.getElementById('editUsageModal').classList.add('active');
+    } catch (error) {
+        showMessage('Error al cargar histórico: ' + error.message, 'error');
+    }
+}
+
+// Guardar horas editadas
+document.getElementById('saveUsageBtn').addEventListener('click', async () => {
+    const userId = window.currentUsageUserId;
+    const semana = document.getElementById('usageWeekSelect').value;
+    const dia = document.getElementById('usageDaySelect').value;
+    const horas = parseFloat(document.getElementById('usageHoursInput').value);
+
+    if (!semana || !dia || isNaN(horas)) {
+        showMessage('Completa todos los campos', 'error');
+        return;
+    }
+
+    try {
+        await apiService.updateUserWeeklyUsage(userId, semana, dia, horas);
+        showMessage('Horas actualizadas correctamente', 'success');
+        document.getElementById('editUsageModal').classList.remove('active');
+        loadUsageList();
+    } catch (error) {
+        showMessage('Error al actualizar horas: ' + error.message, 'error');
+    }
+});

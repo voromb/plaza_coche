@@ -2,12 +2,23 @@ const express = require('express');
 const router = express.Router();
 const { verifyToken } = require('../middleware/auth');
 const ParkingSpot = require('../models/ParkingSpot');
-const Reservation = require('../models/Reservation');
+const Schedule = require('../models/Schedule');
+const WeeklyUsage = require('../models/WeeklyUsage');
 
-// Todas las rutas requieren autenticación
+// Función para calcular el número de semana (mismo formato que seed-data.js)
+const getWeekNumber = date => {
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    const weekNumber = Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
+    return `${d.getUTCFullYear()}-${String(weekNumber).padStart(2, '0')}`;
+};
+
+// Todas las rutas de usuario requieren autenticación
 router.use(verifyToken);
 
-// GET /api/user/parking-spots - Ver plazas disponibles
+// GET /api/user/parking-spots - Plazas disponibles y activas
 router.get('/parking-spots', async (req, res) => {
     try {
         const parkingSpots = await ParkingSpot.find({ disponible: true, activa: true });
@@ -18,89 +29,144 @@ router.get('/parking-spots', async (req, res) => {
     }
 });
 
-// POST /api/user/reserve - Reservar una plaza
-router.post('/reserve', async (req, res) => {
+// POST /api/user/schedule - Guardar horario semanal
+router.post('/schedule', async (req, res) => {
     try {
-        const { parkingSpotId, fechaInicio, fechaFin } = req.body;
         const userId = req.user.id;
+        const { horarios, mes, año } = req.body;
 
-        // Verificar que la plaza existe y está disponible
-        const parkingSpot = await ParkingSpot.findById(parkingSpotId);
-        if (!parkingSpot) {
-            return res.status(404).json({ message: 'Plaza no encontrada' });
-        }
-        if (!parkingSpot.disponible) {
-            return res.status(400).json({ message: 'Plaza no disponible' });
-        }
-
-        // Crear reserva
-        const reservation = new Reservation({
+        const schedule = new Schedule({
             userId,
-            parkingSpotId,
-            fechaInicio: new Date(fechaInicio),
-            fechaFin: new Date(fechaFin),
-            estado: 'activa',
+            horarios,
+            mes,
+            año,
         });
 
-        await reservation.save();
-
-        // Marcar plaza como no disponible
-        parkingSpot.disponible = false;
-        await parkingSpot.save();
+        await schedule.save();
 
         res.status(201).json({
-            message: 'Reserva creada correctamente',
-            reservation,
+            message: 'Horario guardado correctamente',
+            schedule,
         });
     } catch (error) {
-        console.error('Error al crear reserva:', error);
-        res.status(500).json({ message: 'Error al crear reserva' });
+        console.error('Error al guardar horario:', error);
+        res.status(500).json({ message: 'Error al guardar horario' });
     }
 });
 
-// GET /api/user/my-reservations - Ver mis reservas
-router.get('/my-reservations', async (req, res) => {
+// GET /api/user/schedule - Obtener horario del mes actual
+router.get('/schedule', async (req, res) => {
     try {
         const userId = req.user.id;
-        const reservations = await Reservation.find({ userId })
-            .populate('parkingSpotId')
-            .sort({ createdAt: -1 });
+        const hoy = new Date();
+        const mes = hoy.getMonth() + 1;
+        const año = hoy.getFullYear();
 
-        res.json(reservations);
-    } catch (error) {
-        console.error('Error al obtener reservas:', error);
-        res.status(500).json({ message: 'Error al obtener reservas' });
-    }
-});
-
-// DELETE /api/user/cancel-reservation/:id - Cancelar reserva
-router.delete('/cancel-reservation/:id', async (req, res) => {
-    try {
-        const reservationId = req.params.id;
-        const userId = req.user.id;
-
-        const reservation = await Reservation.findOne({
-            _id: reservationId,
+        const schedule = await Schedule.findOne({
             userId,
+            mes,
+            año,
         });
 
-        if (!reservation) {
-            return res.status(404).json({ message: 'Reserva no encontrada' });
+        if (!schedule) {
+            return res.json(null);
         }
 
-        // Cambiar estado a cancelada
-        reservation.estado = 'cancelada';
-        await reservation.save();
-
-        // Liberar la plaza
-        await ParkingSpot.findByIdAndUpdate(reservation.parkingSpotId, {
-            disponible: true,
-        });
-
-        res.json({ message: 'Reserva cancelada correctamente' });
+        res.json(schedule);
     } catch (error) {
-        console.error('Error al cancelar reserva:', error);
-        res.status(500).json({ message: 'Error al cancelar reserva' });
+        console.error('Error al obtener horario:', error);
+        res.status(500).json({ message: 'Error al obtener horario' });
+    }
+});
+
+// GET /api/user/weekly-usage - Obtener uso semanal actual
+router.get('/weekly-usage', async (req, res) => {
+    try {
+        const userId = req.user.id;
+
+        // Calcular número de semana actual usando la función correcta
+        const semana = getWeekNumber(new Date());
+
+        let weeklyUsage = await WeeklyUsage.findOne({ userId, semana });
+
+        // Si no existe, crear uno nuevo
+        if (!weeklyUsage) {
+            weeklyUsage = new WeeklyUsage({
+                userId,
+                semana,
+                horasUtilizadas: 0,
+                detalleHoras: [
+                    { dia: 'lunes', horas: 0 },
+                    { dia: 'martes', horas: 0 },
+                    { dia: 'miercoles', horas: 0 },
+                    { dia: 'jueves', horas: 0 },
+                    { dia: 'viernes', horas: 0 },
+                ],
+            });
+            await weeklyUsage.save();
+        }
+
+        res.json(weeklyUsage);
+    } catch (error) {
+        console.error('Error al obtener uso semanal:', error);
+        res.status(500).json({ message: 'Error al obtener uso semanal' });
+    }
+});
+
+// POST /api/user/weekly-usage/add - Agregar horas al uso semanal
+router.post('/weekly-usage/add', async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { horas, dia } = req.body;
+
+        if (typeof horas !== 'number' || horas < 0) {
+            return res.status(400).json({ message: 'Horas debe ser un número positivo' });
+        }
+
+        // Calcular número de semana actual
+        const hoy = new Date();
+        const primeroEnero = new Date(hoy.getFullYear(), 0, 1);
+        const diasDesdeInicio = hoy - primeroEnero;
+        const semanaNum = Math.ceil((diasDesdeInicio + primeroEnero.getDay() + 1) / 604800000);
+        const semana = `${hoy.getFullYear()}-${String(semanaNum).padStart(2, '0')}`;
+
+        let weeklyUsage = await WeeklyUsage.findOne({ userId, semana });
+
+        if (!weeklyUsage) {
+            weeklyUsage = new WeeklyUsage({
+                userId,
+                semana,
+                horasUtilizadas: 0,
+                detalleHoras: [
+                    { dia: 'lunes', horas: 0 },
+                    { dia: 'martes', horas: 0 },
+                    { dia: 'miercoles', horas: 0 },
+                    { dia: 'jueves', horas: 0 },
+                    { dia: 'viernes', horas: 0 },
+                ],
+            });
+        }
+
+        // Si se especifica día, actualizar ese día
+        if (dia) {
+            const detalle = weeklyUsage.detalleHoras.find(d => d.dia === dia);
+            if (detalle) {
+                detalle.horas += horas;
+            }
+        }
+
+        // Actualizar total
+        weeklyUsage.horasUtilizadas = weeklyUsage.detalleHoras.reduce((sum, d) => sum + d.horas, 0);
+        weeklyUsage.updatedAt = new Date();
+        await weeklyUsage.save();
+
+        res.json({
+            message: 'Horas agregadas correctamente',
+            weeklyUsage,
+        });
+    } catch (error) {
+        console.error('Error al agregar horas:', error);
+        res.status(500).json({ message: 'Error al agregar horas' });
     }
 });
 

@@ -6,45 +6,44 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Panel Admin - Plaza Coche</title>
   <link rel="stylesheet" href="css/style.css">
-</head>
-
-<body>
-  <div class="dashboard">
-    <header class="header">
-      <h1>Plaza Coche - Administrador</h1>
-      <div class="user-info">
-        <span id="userName"></span>
-        <button id="logoutBtn" class="btn btn-secondary">Cerrar Sesión</button>
-      </div>
+  </head>
+  
+  <body>
+    <div class="dashboard">
+      <header class="header">
+        <h1>Plaza Coche - Administrador</h1>
+        <div class="user-info">
+          <span id="userName"></span>
+          <button id="logoutBtn" class="btn btn-secondary">Cerrar Sesión</button> </div>
     </header>
 
     <div class="container">
       <!-- Tabs -->
       <div class="tabs">
         <button class="tab-btn active" data-tab="plazas">Plazas</button>
-        <button class="tab-btn" data-tab="reservas">Reservas</button>
         <button class="tab-btn" data-tab="usuarios">Usuarios</button>
+        <button class="tab-btn" data-tab="uso">Uso del Cargador</button>
       </div>
 
       <!-- Tab: Plazas -->
       <div id="plazas" class="tab-content active">
         <div class="section-header">
-          <h2>Gestión de Plazas</h2>
+          <h1>Gestión de Plazas</h1>
           <button id="addPlazaBtn" class="btn btn-primary">+ Nueva Plaza</button>
         </div>
         <div id="parkingSpotsList" class="table-container"></div>
-      </div>
-
-      <!-- Tab: Reservas -->
-      <div id="reservas" class="tab-content">
-        <h2>Todas las Reservas</h2>
-        <div id="reservationsList" class="table-container"></div>
       </div>
 
       <!-- Tab: Usuarios -->
       <div id="usuarios" class="tab-content">
         <h2>Usuarios Registrados</h2>
         <div id="usersList" class="table-container"></div>
+      </div>
+
+      <!-- Tab: Uso del Cargador -->
+      <div id="uso" class="tab-content">
+        <h2>Uso Semanal del Cargador</h2>
+        <div id="usageList" class="table-container"></div>
       </div>
 
       <div id="message" class="message"></div>
@@ -71,6 +70,51 @@
         </div>
         <button type="submit" class="btn btn-primary">Guardar</button>
       </form>
+    </div>
+  </div>
+
+  <!-- Modal para asignar plaza a usuario -->
+  <div id="assignPlazaModal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2>Asignar Plaza a Usuario</h2>
+      <div class="form-group">
+        <label for="usuarioSelect">Selecciona Usuario</label>
+        <select id="usuarioSelect" required>
+          <option value="">Cargando usuarios...</option>
+        </select>
+      </div>
+      <button id="confirmAssignBtn" class="btn btn-primary">Asignar</button>
+    </div>
+  </div>
+  
+  <!-- Modal para editar horas de uso -->
+  <div id="editUsageModal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2 id="usageModalTitle">Editar Horas de Uso</h2>
+      <div class="form-group">
+        <label for="usageWeekSelect">Selecciona Semana</label>
+        <select id="usageWeekSelect" required>
+          <option value="">Cargando...</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="usageDaySelect">Día</label>
+        <select id="usageDaySelect" required>
+          <option value="">Selecciona día</option>
+          <option value="lunes">Lunes</option>
+          <option value="martes">Martes</option>
+          <option value="miercoles">Miércoles</option>
+          <option value="jueves">Jueves</option>
+          <option value="viernes">Viernes</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="usageHoursInput">Horas</label>
+        <input type="number" id="usageHoursInput" min="0" max="8" step="0.5" required>
+      </div>
+      <button id="saveUsageBtn" class="btn btn-primary">Guardar</button>
     </div>
   </div>
 

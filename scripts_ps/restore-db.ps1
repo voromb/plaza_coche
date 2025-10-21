@@ -5,7 +5,7 @@
 
 param(
     [Parameter(Mandatory=$false)]
-    [string]$BackupTimestamp
+    [string]$DateFolder
 )
 
 Write-Host "========================================" -ForegroundColor Cyan
@@ -24,38 +24,61 @@ if (-not $container) {
 
 $backupDir = "db_backups"
 
-# Si no se especificó timestamp, mostrar backups disponibles
-if (-not $BackupTimestamp) {
-    Write-Host "Backups disponibles:" -ForegroundColor Yellow
+# Si se especificó carpeta como parámetro, usar esa
+if ($DateFolder) {
+    $selectedFolder = $DateFolder
+} else {
+    # Mostrar carpetas disponibles por fecha
+    Write-Host "Carpetas de backups disponibles:" -ForegroundColor Yellow
     Write-Host ""
     
-    $backups = Get-ChildItem -Path $backupDir -Filter "*_users.json" | ForEach-Object {
-        $_.Name -replace '_users.json$', ''
-    } | Sort-Object -Descending
+    $folders = Get-ChildItem -Path $backupDir -Directory -ErrorAction SilentlyContinue | Sort-Object -Descending
     
-    if ($backups.Count -eq 0) {
-        Write-Host "No hay backups disponibles" -ForegroundColor Red
+    if ($folders.Count -eq 0) {
+        Write-Host "No hay carpetas de backup disponibles" -ForegroundColor Red
         Write-Host ""
         Write-Host "Usa: .\backup-db.ps1 para crear uno" -ForegroundColor Yellow
         Read-Host "Presiona Enter para salir"
         exit 1
     }
     
-    for ($i = 0; $i -lt $backups.Count; $i++) {
-        Write-Host "  [$i] $($backups[$i])" -ForegroundColor Cyan
+    for ($i = 0; $i -lt $folders.Count; $i++) {
+        Write-Host "  [$i] $($folders[$i].Name)" -ForegroundColor Cyan
     }
     
     Write-Host ""
-    $selection = Read-Host "Selecciona el número del backup a restaurar"
+    $selection = Read-Host "Selecciona la carpeta (número)"
     
-    if ($selection -match '^\d+$' -and [int]$selection -lt $backups.Count) {
-        $BackupTimestamp = $backups[[int]$selection]
+    if ($selection -match '^\d+$' -and [int]$selection -lt $folders.Count) {
+        $selectedFolder = $folders[[int]$selection].Name
     } else {
         Write-Host "[ERROR] Selección inválida" -ForegroundColor Red
         Read-Host "Presiona Enter para salir"
         exit 1
     }
 }
+
+# Ahora buscar el backup más nuevo en la carpeta seleccionada
+$targetDir = "$backupDir/$selectedFolder"
+
+if (-not (Test-Path $targetDir)) {
+    Write-Host "[ERROR] La carpeta no existe: $targetDir" -ForegroundColor Red
+    Read-Host "Presiona Enter para salir"
+    exit 1
+}
+
+# Obtener el backup más nuevo de esa carpeta
+$backups = Get-ChildItem -Path $targetDir -Filter "*_users.json" | Sort-Object -Descending
+
+if ($backups.Count -eq 0) {
+    Write-Host "[ERROR] No hay backups en: $targetDir" -ForegroundColor Red
+    Read-Host "Presiona Enter para salir"
+    exit 1
+}
+
+$backupName = $backups[0].Name -replace '_users.json$', ''
+$BackupTimestamp = "$selectedFolder/$backupName"
+Write-Host "Usando backup más reciente: $BackupTimestamp" -ForegroundColor Green
 
 $backupPath = "$backupDir/$BackupTimestamp"
 
@@ -85,6 +108,8 @@ Write-Host "  → Preparando archivos..." -ForegroundColor White
 docker cp "$backupPath`_users.json" plaza_coche_mongodb:/tmp/users.json
 docker cp "$backupPath`_parkingspots.json" plaza_coche_mongodb:/tmp/parkingspots.json
 docker cp "$backupPath`_reservations.json" plaza_coche_mongodb:/tmp/reservations.json
+docker cp "$backupPath`_schedules.json" plaza_coche_mongodb:/tmp/schedules.json 2>$null
+docker cp "$backupPath`_weeklyusages.json" plaza_coche_mongodb:/tmp/weeklyusages.json 2>$null
 
 # Importar cada colección
 Write-Host "  → Importando usuarios..." -ForegroundColor White
@@ -95,6 +120,12 @@ docker exec plaza_coche_mongodb mongoimport --db=plaza_coche --collection=parkin
 
 Write-Host "  → Importando reservas..." -ForegroundColor White
 docker exec plaza_coche_mongodb mongoimport --db=plaza_coche --collection=reservations --file=/tmp/reservations.json --jsonArray --drop 2>$null
+
+Write-Host "  → Importando horarios..." -ForegroundColor White
+docker exec plaza_coche_mongodb mongoimport --db=plaza_coche --collection=schedules --file=/tmp/schedules.json --jsonArray --drop 2>$null
+
+Write-Host "  → Importando uso del cargador..." -ForegroundColor White
+docker exec plaza_coche_mongodb mongoimport --db=plaza_coche --collection=weeklyusages --file=/tmp/weeklyusages.json --jsonArray --drop 2>$null
 
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Green

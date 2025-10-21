@@ -19,38 +19,59 @@ if [ -z "$container" ]; then
 fi
 
 backupDir="db_backups"
+dateFolder="$1"
 
-# Si no se especificó timestamp como argumento, mostrar backups disponibles
-if [ -z "$1" ]; then
-    echo "Backups disponibles:"
+# Si se especificó carpeta como parámetro, usar esa
+if [ -n "$dateFolder" ]; then
+    selectedFolder="$dateFolder"
+else
+    # Mostrar carpetas disponibles por fecha
+    echo "Carpetas de backups disponibles:"
     echo ""
     
-    # Listar backups disponibles
-    backups=($(ls -1 "$backupDir"/*_users.json 2>/dev/null | sed 's/_users.json$//' | xargs -n1 basename | sort -r))
+    folders=($(ls -1d "$backupDir"/*/ 2>/dev/null | xargs -n1 basename | sort -r))
     
-    if [ ${#backups[@]} -eq 0 ]; then
-        echo "No hay backups disponibles"
+    if [ ${#folders[@]} -eq 0 ]; then
+        echo "No hay carpetas de backup disponibles"
         echo ""
         echo "Usa: ./backup-db.sh para crear uno"
         exit 1
     fi
     
-    for i in "${!backups[@]}"; do
-        echo "  [$i] ${backups[$i]}"
+    for i in "${!folders[@]}"; do
+        echo "  [$i] ${folders[$i]}"
     done
     
     echo ""
-    read -p "Selecciona el número del backup a restaurar: " selection
+    read -p "Selecciona la carpeta (número): " selection
     
-    if [[ "$selection" =~ ^[0-9]+$ ]] && [ "$selection" -lt "${#backups[@]}" ]; then
-        BackupTimestamp="${backups[$selection]}"
+    if [[ "$selection" =~ ^[0-9]+$ ]] && [ "$selection" -lt "${#folders[@]}" ]; then
+        selectedFolder="${folders[$selection]}"
     else
         echo "[ERROR] Selección inválida"
         exit 1
     fi
-else
-    BackupTimestamp="$1"
 fi
+
+# Ahora buscar el backup más nuevo en la carpeta seleccionada
+targetDir="${backupDir}/${selectedFolder}"
+
+if [ ! -d "$targetDir" ]; then
+    echo "[ERROR] La carpeta no existe: $targetDir"
+    exit 1
+fi
+
+# Obtener el backup más nuevo de esa carpeta
+backupFile=$(ls -1 "${targetDir}"/*_users.json 2>/dev/null | sort -r | head -1)
+
+if [ -z "$backupFile" ]; then
+    echo "[ERROR] No hay backups en: $targetDir"
+    exit 1
+fi
+
+backupName=$(basename "$backupFile" _users.json)
+BackupTimestamp="${selectedFolder}/${backupName}"
+echo "Usando backup más reciente: $BackupTimestamp"
 
 backupPath="${backupDir}/${BackupTimestamp}"
 
@@ -78,6 +99,8 @@ echo "   Preparando archivos..."
 docker cp "${backupPath}_users.json" plaza_coche_mongodb:/tmp/users.json
 docker cp "${backupPath}_parkingspots.json" plaza_coche_mongodb:/tmp/parkingspots.json
 docker cp "${backupPath}_reservations.json" plaza_coche_mongodb:/tmp/reservations.json
+docker cp "${backupPath}_schedules.json" plaza_coche_mongodb:/tmp/schedules.json 2>/dev/null
+docker cp "${backupPath}_weeklyusages.json" plaza_coche_mongodb:/tmp/weeklyusages.json 2>/dev/null
 
 # Importar cada colección
 echo "   Importando usuarios..."
@@ -88,6 +111,12 @@ docker exec plaza_coche_mongodb mongoimport --db=plaza_coche --collection=parkin
 
 echo "   Importando reservas..."
 docker exec plaza_coche_mongodb mongoimport --db=plaza_coche --collection=reservations --file=/tmp/reservations.json --jsonArray --drop 2>/dev/null
+
+echo "   Importando horarios..."
+docker exec plaza_coche_mongodb mongoimport --db=plaza_coche --collection=schedules --file=/tmp/schedules.json --jsonArray --drop 2>/dev/null
+
+echo "   Importando uso del cargador..."
+docker exec plaza_coche_mongodb mongoimport --db=plaza_coche --collection=weeklyusages --file=/tmp/weeklyusages.json --jsonArray --drop 2>/dev/null
 
 echo ""
 echo "========================================"
