@@ -14,12 +14,12 @@ const ParkingSpot = require('../models/ParkingSpot');
 
 async function initData() {
     try {
-        console.log('🚀 Iniciando carga de datos...');
+        console.log('Iniciando carga de datos...');
 
         // Limpiar colecciones existentes
         await User.deleteMany({});
         await ParkingSpot.deleteMany({});
-        console.log('✅ Colecciones limpiadas');
+        console.log('Colecciones limpiadas');
 
         // Crear usuario admin
         const admin = new User({
@@ -30,7 +30,7 @@ async function initData() {
             role: 'admin',
         });
         await admin.save();
-        console.log('✅ Usuario admin creado: admin@iestacio.gva.es / admin123');
+        console.log('Usuario admin creado: admin@iestacio.gva.es / admin123');
 
         // Crear usuarios normales
         const usuarios = [
@@ -75,7 +75,7 @@ async function initData() {
             const user = new User(userData);
             await user.save();
         }
-        console.log(`✅ ${usuarios.length} usuarios normales creados`);
+        console.log(`${usuarios.length} usuarios normales creados`);
 
         // Crear plazas de estacionamiento
         const plazas = [
@@ -99,12 +99,12 @@ async function initData() {
             const plaza = new ParkingSpot(plazaData);
             await plaza.save();
         }
-        console.log(`✅ ${plazas.length} plazas creadas`);
+        console.log(`${plazas.length} plazas creadas`);
 
-        console.log('\n✨ Datos de prueba cargados correctamente!');
-        console.log('\n📝 Credenciales:');
-        console.log('   👤 Admin: admin@iestacio.gva.es / admin123');
-        console.log('\n   👥 Usuarios (todos con password: user123):');
+        console.log('\nDatos de prueba cargados correctamente!');
+        console.log('\nCredenciales:');
+        console.log('   Admin: admin@iestacio.gva.es / admin123');
+        console.log('\n   Usuarios (todos con password: user123):');
         console.log('   • voro.moran@iestacio.gva.es');
         console.log('   • xavi.smx@iestacio.gva.es');
         console.log('   • jairo.smx@iestacio.gva.es');
@@ -113,7 +113,7 @@ async function initData() {
 
         process.exit(0);
     } catch (error) {
-        console.error('❌ Error al cargar datos:', error);
+        console.error('Error al cargar datos:', error);
         process.exit(1);
     }
 }

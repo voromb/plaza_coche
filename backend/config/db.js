@@ -21,9 +21,9 @@ class Database {
                 useUnifiedTopology: true,
             });
 
-            console.log('✅ MongoDB conectado correctamente');
+            console.log('MongoDB conectado correctamente');
         } catch (error) {
-            console.error('❌ Error al conectar MongoDB:', error);
+            console.error('Error al conectar MongoDB:', error);
             process.exit(1);
         }
     }
