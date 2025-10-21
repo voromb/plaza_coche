@@ -195,8 +195,6 @@ plaza_coche/
 │   │   ├── auth.js            # Login/Register
 │   │   ├── user.js            # Rutas de usuario
 │   │   └── admin.js           # Rutas de admin
-│   ├── scripts/
-│   │   └── init-data.js       # Inicializar datos
 │   ├── server.js              # Punto de entrada
 │   ├── package.json
 │   └── Dockerfile
