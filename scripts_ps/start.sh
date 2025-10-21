@@ -32,10 +32,32 @@ sleep 15
 
 echo ""
 echo "========================================"
-echo "  INICIALIZANDO DATOS DE PRUEBA"
+echo "  RESTAURANDO DATOS DESDE BACKUP"
 echo "========================================"
 echo ""
-docker exec plaza_coche_backend node scripts/init-data.js
+
+# Buscar el backup más reciente
+backups=($(ls -1 db_backups/*_users.json 2>/dev/null | sed 's/_users.json$//' | xargs -n1 basename | sort -r))
+
+if [ ${#backups[@]} -gt 0 ]; then
+    latestBackup="${backups[0]}"
+    echo "Restaurando backup: $latestBackup"
+    
+    # Copiar archivos al contenedor
+    docker cp "db_backups/${latestBackup}_users.json" plaza_coche_mongodb:/tmp/users.json
+    docker cp "db_backups/${latestBackup}_parkingspots.json" plaza_coche_mongodb:/tmp/parkingspots.json
+    docker cp "db_backups/${latestBackup}_reservations.json" plaza_coche_mongodb:/tmp/reservations.json
+    
+    # Importar cada colección
+    docker exec plaza_coche_mongodb mongoimport --db=plaza_coche --collection=users --file=/tmp/users.json --jsonArray --drop 2>/dev/null
+    docker exec plaza_coche_mongodb mongoimport --db=plaza_coche --collection=parkingspots --file=/tmp/parkingspots.json --jsonArray --drop 2>/dev/null
+    docker exec plaza_coche_mongodb mongoimport --db=plaza_coche --collection=reservations --file=/tmp/reservations.json --jsonArray --drop 2>/dev/null
+    
+    echo "Datos restaurados correctamente"
+else
+    echo "No hay backups disponibles, ejecutando init-data.js..."
+    docker exec plaza_coche_backend node scripts/init-data.js
+fi
 
 echo ""
 echo "========================================"

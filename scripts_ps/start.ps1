@@ -57,12 +57,33 @@ Write-Host "[3/4] Esperando a que los servicios estén listos..." -ForegroundCol
 Start-Sleep -Seconds 15
 
 Write-Host ""
-# Paso 4: Inicializar datos de prueba
+# Paso 4: Restaurar datos desde backup
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "  INICIALIZANDO DATOS DE PRUEBA" -ForegroundColor Cyan
+Write-Host "  RESTAURANDO DATOS DESDE BACKUP" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
-docker exec plaza_coche_backend node scripts/init-data.js
+
+# Buscar el backup más reciente
+$backups = Get-ChildItem -Path "db_backups" -Filter "*_users.json" | Sort-Object Name -Descending
+if ($backups.Count -gt 0) {
+    $latestBackup = $backups[0].Name -replace '_users.json$', ''
+    Write-Host "Restaurando backup: $latestBackup" -ForegroundColor Yellow
+    
+    # Copiar archivos al contenedor
+    docker cp "db_backups/${latestBackup}_users.json" plaza_coche_mongodb:/tmp/users.json
+    docker cp "db_backups/${latestBackup}_parkingspots.json" plaza_coche_mongodb:/tmp/parkingspots.json
+    docker cp "db_backups/${latestBackup}_reservations.json" plaza_coche_mongodb:/tmp/reservations.json
+    
+    # Importar cada colección
+    docker exec plaza_coche_mongodb mongoimport --db=plaza_coche --collection=users --file=/tmp/users.json --jsonArray --drop 2>$null
+    docker exec plaza_coche_mongodb mongoimport --db=plaza_coche --collection=parkingspots --file=/tmp/parkingspots.json --jsonArray --drop 2>$null
+    docker exec plaza_coche_mongodb mongoimport --db=plaza_coche --collection=reservations --file=/tmp/reservations.json --jsonArray --drop 2>$null
+    
+    Write-Host "Datos restaurados correctamente" -ForegroundColor Green
+} else {
+    Write-Host "No hay backups disponibles, ejecutando init-data.js..." -ForegroundColor Yellow
+    docker exec plaza_coche_backend node scripts/init-data.js
+}
 
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Green
