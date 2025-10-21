@@ -311,11 +311,21 @@ async function loadUsageList() {
     try {
         const usuarios = await apiService.getUsuariosHoras();
         const container = document.getElementById('usageList');
+        const filterUser = document.getElementById('filterUser');
 
         if (!usuarios || usuarios.length === 0) {
             container.innerHTML = '<p>No hay usuarios registrados</p>';
             return;
         }
+
+        // Llenar el dropdown de usuarios
+        filterUser.innerHTML = '<option value="">Selecciona un usuario...</option>';
+        usuarios.forEach(user => {
+            const option = document.createElement('option');
+            option.value = user._id;
+            option.textContent = `${user.nombre} ${user.apellidos}`;
+            filterUser.appendChild(option);
+        });
 
         container.innerHTML = `
             <table>
@@ -349,6 +359,49 @@ async function loadUsageList() {
         showMessage('Error al cargar uso: ' + error.message, 'error');
     }
 }
+
+// Buscar uso semanal de un usuario específico
+document.getElementById('filterBtn').addEventListener('click', async () => {
+    const userId = document.getElementById('filterUser').value;
+    const semana = document.getElementById('filterWeek').value;
+    const container = document.getElementById('usageList');
+
+    if (!userId) {
+        showMessage('Selecciona un usuario', 'error');
+        return;
+    }
+
+    if (!semana) {
+        showMessage('Ingresa una semana (Ej: 2025-43)', 'error');
+        return;
+    }
+
+    try {
+        // Obtener historial y buscar la semana
+        const usage = await apiService.getUserUsageHistory(userId);
+        const weekData = usage.find(u => u.semana === semana);
+
+        if (!weekData) {
+            showMessage(`No hay datos para la semana ${semana}`, 'warning');
+            container.innerHTML = '<p>No hay datos disponibles para esa semana</p>';
+            return;
+        }
+
+        // Mostrar datos de esa semana
+        let html = '<table><thead><tr><th>Día</th><th>Horas</th></tr></thead><tbody>';
+        if (weekData.detalleHoras && weekData.detalleHoras.length > 0) {
+            weekData.detalleHoras.forEach(dia => {
+                html += `<tr><td>${dia.dia}</td><td>${dia.horas}h</td></tr>`;
+            });
+        }
+        html += `</tbody></table>`;
+        html += `<p style="margin-top: 1rem;"><strong>Total semana ${semana}: ${weekData.horasUtilizadas}h</strong></p>`;
+
+        container.innerHTML = html;
+    } catch (error) {
+        showMessage('Error al buscar datos: ' + error.message, 'error');
+    }
+});
 
 // Abrir modal para ver histórico de un usuario
 async function openUsageHistoryModal(userId, userName) {

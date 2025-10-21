@@ -43,6 +43,22 @@
       <!-- Tab: Uso del Cargador -->
       <div id="uso" class="tab-content">
         <h2>Uso Semanal del Cargador</h2>
+        <div class="filters" style="margin-bottom: 2rem; display: flex; gap: 1rem; flex-wrap: wrap;">
+          <div>
+            <label for="filterUser">Usuario:</label>
+            <select id="filterUser" style="padding: 0.5rem; border-radius: 4px; border: 1px solid #d1d5db;">
+              <option value="">Selecciona un usuario...</option>
+            </select>
+          </div>
+        
+          <div>
+            <label for="filterWeek">Semana:</label>
+            <input type="text" id="filterWeek" placeholder="Ej: 2025-43"
+              style="padding: 0.5rem; border-radius: 4px; border: 1px solid #d1d5db;">
+          </div>
+        
+          <button id="filterBtn" class="btn btn-primary" style="align-self: flex-end;">Buscar</button>
+        </div>
         <div id="usageList" class="table-container"></div>
       </div>
 
