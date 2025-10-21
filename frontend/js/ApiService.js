@@ -7,7 +7,7 @@ class ApiService {
             return ApiService.instance;
         }
 
-        this.baseURL = 'http://localhost:3000/api';
+        this.baseURL = 'http://localhost:3010/api';
         ApiService.instance = this;
     }
 
