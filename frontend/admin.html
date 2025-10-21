@@ -28,10 +28,7 @@
 
       <!-- Tab: Plazas -->
       <div id="plazas" class="tab-content active">
-        <div class="section-header">
-          <h2>Gestión de Plazas</h2>
-          <button id="addPlazaBtn" class="btn btn-primary">+ Nueva Plaza</button>
-        </div>
+        <h2>Gestión de Plazas</h2>
         <div id="parkingSpotsList" class="table-container"></div>
       </div>
 
@@ -48,29 +45,6 @@
       </div>
 
       <div id="message" class="message"></div>
-    </div>
-  </div>
-
-  <!-- Modal para crear/editar plaza -->
-  <div id="plazaModal" class="modal">
-    <div class="modal-content">
-      <span class="close">&times;</span>
-      <h2 id="modalTitle">Nueva Plaza</h2>
-      <form id="plazaForm">
-        <div class="form-group">
-          <label for="numero">Número de Plaza</label>
-          <input type="text" id="numero" required>
-        </div>
-        <div class="form-group">
-          <label for="ubicacion">Ubicación</label>
-          <input type="text" id="ubicacion" required>
-        </div>
-        <div class="form-group">
-          <label for="descripcion">Descripción</label>
-          <textarea id="descripcion" rows="3"></textarea>
-        </div>
-        <button type="submit" class="btn btn-primary">Guardar</button>
-      </form>
     </div>
   </div>
 
