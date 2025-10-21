@@ -128,6 +128,9 @@
         // Guardar flag para abrir modal de horario en user.html
         localStorage.setItem('newUserSchedule', 'true');
         
+        // Mostrar alerta informativa
+        alert('¡Bienvenido! 🎉\n\nTe has registrado exitosamente.\n\nA continuación, deberás introducir tu horario semanal de disponibilidad.\n\nCada lunes a las 00:00, entrarás automáticamente en la rueda de asignación del cargador.\n\n¡Que disfrutes!');
+        
         // Redirigir a panel de usuario
         window.location.href = 'user.html';
       } catch (error) {
