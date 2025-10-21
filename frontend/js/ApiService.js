@@ -105,6 +105,12 @@ class ApiService {
         });
     }
 
+    async toggleParkingSpot(id) {
+        return this.request(`/admin/parking-spot/${id}/toggle`, {
+            method: 'PUT',
+        });
+    }
+
     async deleteParkingSpot(id) {
         return this.request(`/admin/parking-spot/${id}`, {
             method: 'DELETE',

@@ -106,6 +106,29 @@ router.delete('/parking-spot/:id', async (req, res) => {
     }
 });
 
+// PUT /api/admin/parking-spot/:id/toggle - Activar/Desactivar plaza
+router.put('/parking-spot/:id/toggle', async (req, res) => {
+    try {
+        const parkingSpot = await ParkingSpot.findById(req.params.id);
+
+        if (!parkingSpot) {
+            return res.status(404).json({ message: 'Plaza no encontrada' });
+        }
+
+        // Cambiar estado activa
+        parkingSpot.activa = !parkingSpot.activa;
+        await parkingSpot.save();
+
+        res.json({
+            message: `Plaza ${parkingSpot.activa ? 'activada' : 'desactivada'} correctamente`,
+            parkingSpot,
+        });
+    } catch (error) {
+        console.error('Error al cambiar estado de plaza:', error);
+        res.status(500).json({ message: 'Error al cambiar estado de plaza' });
+    }
+});
+
 // GET /api/admin/users - Ver todos los usuarios
 router.get('/users', async (req, res) => {
     try {

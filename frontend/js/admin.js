@@ -80,7 +80,8 @@ async function loadParkingSpots() {
                         <th>Número</th>
                         <th>Ubicación</th>
                         <th>Descripción</th>
-                        <th>Estado</th>
+                        <th>Disponible</th>
+                        <th>Activa</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
@@ -94,13 +95,19 @@ async function loadParkingSpots() {
                             <td>${spot.descripcion || '-'}</td>
                             <td>
                                 <span class="status ${spot.disponible ? 'disponible' : 'ocupada'}">
-                                    ${spot.disponible ? 'Disponible' : 'Ocupada'}
+                                    ${spot.disponible ? 'Sí' : 'No'}
                                 </span>
                             </td>
                             <td>
-                                <button class="btn btn-danger btn-small" onclick="deletePlaza('${
-                                    spot._id
-                                }')">
+                                <span class="status ${spot.activa ? 'disponible' : 'ocupada'}">
+                                    ${spot.activa ? 'Sí' : 'No'}
+                                </span>
+                            </td>
+                            <td>
+                                <button class="btn btn-primary btn-small" onclick="togglePlaza('${spot._id}')">
+                                    ${spot.activa ? 'Desactivar' : 'Activar'}
+                                </button>
+                                <button class="btn btn-danger btn-small" onclick="deletePlaza('${spot._id}')">
                                     Eliminar
                                 </button>
                             </td>
@@ -272,6 +279,17 @@ async function deletePlaza(id) {
         loadParkingSpots();
     } catch (error) {
         showMessage('Error al eliminar plaza: ' + error.message, 'error');
+    }
+}
+
+// Activar/Desactivar plaza
+async function togglePlaza(id) {
+    try {
+        const response = await apiService.toggleParkingSpot(id);
+        showMessage(response.message, 'success');
+        loadParkingSpots();
+    } catch (error) {
+        showMessage('Error: ' + error.message, 'error');
     }
 }
 

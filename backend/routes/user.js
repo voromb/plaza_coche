@@ -10,7 +10,7 @@ router.use(verifyToken);
 // GET /api/user/parking-spots - Ver plazas disponibles
 router.get('/parking-spots', async (req, res) => {
     try {
-        const parkingSpots = await ParkingSpot.find({ disponible: true });
+        const parkingSpots = await ParkingSpot.find({ disponible: true, activa: true });
         res.json(parkingSpots);
     } catch (error) {
         console.error('Error al obtener plazas:', error);
