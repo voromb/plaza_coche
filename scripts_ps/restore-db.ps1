@@ -59,7 +59,7 @@ if ($DateFolder) {
 }
 
 # Ahora buscar el backup más nuevo en la carpeta seleccionada
-$targetDir = "$backupDir/$selectedFolder"
+$targetDir = Join-Path -Path $backupDir -ChildPath $selectedFolder
 
 if (-not (Test-Path $targetDir)) {
     Write-Host "[ERROR] La carpeta no existe: $targetDir" -ForegroundColor Red
@@ -77,10 +77,10 @@ if ($backups.Count -eq 0) {
 }
 
 $backupName = $backups[0].Name -replace '_users.json$', ''
-$BackupTimestamp = "$selectedFolder/$backupName"
+$BackupTimestamp = Join-Path -Path $selectedFolder -ChildPath $backupName
 Write-Host "Usando backup más reciente: $BackupTimestamp" -ForegroundColor Green
 
-$backupPath = "$backupDir/$BackupTimestamp"
+$backupPath = Join-Path -Path $backupDir -ChildPath $BackupTimestamp
 
 # Verificar que existan los archivos
 if (-not (Test-Path "$backupPath`_users.json")) {
